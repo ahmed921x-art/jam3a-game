@@ -2,42 +2,170 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>سين جيم — لعبة المسابقات</title>
-    <meta name="description" content="سين جيم — لعبة مسابقات عربية بين فريقين، فئات وأسئلة ونقاط." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>جمعة — لعبة المسابقات الأولى</title>
+    <meta name="description" content="جمعة — لعبة مسابقات عربية احترافية بين فريقين، فئات وأسئلة ونقاط، تسجيل دخول وحساب وإحصائيات." />
+    <meta name="theme-color" content="#0c0f1a" />
+    <meta property="og:title" content="جمعة — لعبة المسابقات" />
+    <meta property="og:description" content="فريقان، فئات لا تنتهي، وتحدٍّ لا يُنسى." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="og-image.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="og-image.svg" />
+    <link rel="icon" href="icon.svg" />
+    <link rel="manifest" href="manifest.json" />
     <link rel="stylesheet" href="style.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="landing.css" />
   </head>
-  <body>
+  <body data-theme="royal">
+    <canvas id="starfield"></canvas>
+    <div class="aurora"></div>
+
+    <!-- شريط علوي -->
+    <header class="topbar">
+      <div class="logo-mini" onclick="Game.goLanding()">جمعة</div>
+      <div class="topbar-actions">
+        <button class="chip-btn" id="langBtn" aria-label="تغيير اللغة" onclick="Game.toggleLang()">EN</button>
+        <button class="icon-btn" id="helpBtn" title="كيف ألعب" aria-label="كيف ألعب" onclick="Game.openHelp()">❓</button>
+        <button class="icon-btn" id="themeBtn" title="الثيم" aria-label="تغيير الثيم" onclick="Game.cycleTheme()">🎨</button>
+        <button class="icon-btn" id="soundBtn" title="الصوت" aria-label="تشغيل/إيقاف الصوت" onclick="Game.toggleSound()">🔊</button>
+        <button class="icon-btn" id="fsBtn" title="ملء الشاشة" aria-label="ملء الشاشة" onclick="Game.toggleFullscreen()">⛶</button>
+        <button class="profile-chip" id="profileChip" aria-label="الملف الشخصي" onclick="Game.openProfile()">
+          <span class="pc-avatar" id="pcAvatar">👤</span>
+          <span class="pc-name" id="pcName">دخول</span>
+        </button>
+      </div>
+    </header>
+
     <div class="wrap">
+      <!-- ============ صفحة الهبوط ============ -->
+      <section id="landingScreen" class="screen active">
+        <div class="hero">
+          <div class="hero-badge">⭐ النسخة الاحترافية</div>
+          <h1 class="glow-title hero-title">جمعة</h1>
+          <p class="hero-tagline" data-i18n="tagline">لعبة المسابقات رقم ١ — فريقان، فئات، وتحدٍّ لا يُنسى</p>
+          <p class="hero-sub" data-i18n="hero_sub">اختر فئاتك، اجمع فريقك، وابدأ معركة المعلومات بأجواء احترافية.</p>
+          <div class="hero-cta">
+            <button class="btn btn-gold btn-lg pulse" data-i18n="play_now" onclick="Game.playClick()">ابدأ اللعب الآن 🚀</button>
+            <a href="#how" class="btn btn-ghost btn-lg" data-i18n="how_play">كيف تلعب؟</a>
+          </div>
+
+          <div class="hero-stats">
+            <div class="hstat"><span class="hs-num" id="statCats">0</span><span class="hs-lbl" data-i18n="stat_cats">فئة</span></div>
+            <div class="hstat"><span class="hs-num" id="statQ">0</span><span class="hs-lbl" data-i18n="stat_q">سؤال</span></div>
+            <div class="hstat"><span class="hs-num" id="statGames">0</span><span class="hs-lbl" data-i18n="stat_games">لعبة لُعبت</span></div>
+          </div>
+        </div>
+
+        <!-- شريط فئات متحرك -->
+        <div class="cat-marquee"><div class="cm-track" id="cmTrack"></div></div>
+
+        <!-- المميزات -->
+        <h2 class="section-h" data-i18n="feat_title">ليش جمعة؟</h2>
+        <div class="features">
+          <div class="feature"><div class="fic">♾️</div><h3 data-i18n="f1_t">فئات لا تنتهي</h3><p data-i18n="f1_d">عشرات الفئات وأسئلة عشوائية تتجدد كل لعبة.</p></div>
+          <div class="feature"><div class="fic">✏️</div><h3 data-i18n="f2_t">محرر خاص</h3><p data-i18n="f2_d">أضف فئاتك وأسئلتك واحفظها وشاركها.</p></div>
+          <div class="feature"><div class="fic">🎉</div><h3 data-i18n="f3_t">أجواء احترافية</h3><p data-i18n="f3_d">أصوات، مؤثرات، كونفيتي، وتصميم عالمي.</p></div>
+          <div class="feature"><div class="fic">📱</div><h3 data-i18n="f4_t">يعمل بدون نت</h3><p data-i18n="f4_d">ثبّتها كتطبيق والعب في أي مكان.</p></div>
+        </div>
+
+        <!-- كيف تلعب -->
+        <h2 class="section-h" id="how" data-i18n="how_play">كيف تلعب؟</h2>
+        <div class="steps">
+          <div class="step"><span class="step-n">1</span><p data-i18n="step1">اختر فريقين وسمّهما</p></div>
+          <div class="step"><span class="step-n">2</span><p data-i18n="step2">اختر 6 فئات</p></div>
+          <div class="step"><span class="step-n">3</span><p data-i18n="step3">جاوب واجمع النقاط</p></div>
+          <div class="step"><span class="step-n">4</span><p data-i18n="step4">الأعلى نقاطاً يفوز 🏆</p></div>
+        </div>
+
+        <div class="hero-cta center">
+          <button class="btn btn-gold btn-lg" data-i18n="play_now" onclick="Game.playClick()">ابدأ اللعب الآن 🚀</button>
+        </div>
+
+        <footer class="footer"><span data-i18n="footer">صُنع بشغف لعشاق التحدي</span> • جمعة © 2026</footer>
+      </section>
+
       <!-- ============ شاشة الإعداد ============ -->
-      <section id="setupScreen" class="screen active">
+      <section id="setupScreen" class="screen">
         <div class="brand">
-          <h1>سين جيم</h1>
-          <p>لعبة المسابقات — فريقان يتنافسان على الفئات والنقاط</p>
+          <h1 class="glow-title">جمعة</h1>
+        </div>
+
+        <div id="resumeBox" class="resume-box" style="display: none">
+          <span>🎮 <span data-i18n="resume_msg">عندك لعبة محفوظة لم تكتمل</span></span>
+          <div>
+            <button class="btn btn-gold btn-sm" data-i18n="resume" onclick="Game.resume()">استكمال</button>
+            <button class="btn btn-ghost btn-sm" data-i18n="del" onclick="Game.discardSave()">حذف</button>
+          </div>
         </div>
 
         <div class="card">
-          <h2>🎯 أسماء الفريقين</h2>
+          <h2 data-i18n="teams_h">🎯 أسماء الفريقين</h2>
           <div class="teams-inputs">
             <div class="field">
-              <label for="team1">الفريق الأول</label>
-              <input id="team1" type="text" placeholder="الفريق الأزرق" maxlength="20" />
+              <label data-i18n="team1_l">الفريق الأول</label>
+              <input id="team1" type="text" data-i18n-ph="team1_ph" placeholder="الفريق الأزرق" maxlength="20" />
+              <div class="color-pick" id="colorPick1"></div>
             </div>
             <div class="field">
-              <label for="team2">الفريق الثاني</label>
-              <input id="team2" type="text" placeholder="الفريق الأحمر" maxlength="20" />
+              <label data-i18n="team2_l">الفريق الثاني</label>
+              <input id="team2" type="text" data-i18n-ph="team2_ph" placeholder="الفريق الأحمر" maxlength="20" />
+              <div class="color-pick" id="colorPick2"></div>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <h2>📚 اختر الفئات</h2>
-          <p class="hint">اختر <b>6 فئات</b> بالضبط للعب — <span id="catCounter">0 / 6</span></p>
+          <div class="card-head-row">
+            <h2 data-i18n="cats_h">📚 اختر الفئات</h2>
+            <button class="btn btn-ghost btn-sm" data-i18n="editor_btn" onclick="Game.openEditor()">✏️ محرر الفئات</button>
+          </div>
+          <p class="hint"><span data-i18n="cats_hint_a">اختر</span> <b>6</b> <span data-i18n="cats_hint_b">فئات بالضبط</span> — <span id="catCounter">0 / 6</span></p>
           <div id="catsGrid" class="cats-grid"></div>
         </div>
 
-        <button id="startBtn" class="btn btn-gold btn-lg btn-block">ابدأ اللعب 🚀</button>
+        <div class="card">
+          <h2 data-i18n="settings_h">⚙️ الإعدادات</h2>
+          <div class="settings-row">
+            <div class="field">
+              <label data-i18n="timer_l">مدة المؤقت لكل سؤال</label>
+              <div class="seg" id="timeSeg">
+                <button data-v="30">30</button>
+                <button data-v="45">45</button>
+                <button class="on" data-v="60">60</button>
+                <button data-v="90">90</button>
+              </div>
+            </div>
+            <div class="field">
+              <label data-i18n="rand_l">عشوائية الأسئلة</label>
+              <div class="seg" id="randSeg">
+                <button class="on" data-v="1" data-i18n="rand_on">عشوائي 🎲</button>
+                <button data-v="0" data-i18n="rand_off">ثابت</button>
+              </div>
+            </div>
+          </div>
+          <div class="field" style="margin-top: 16px">
+            <label>عدد الفئات</label>
+            <div class="seg" id="catCountSeg">
+              <button data-v="4">4 فئات</button>
+              <button data-v="5">5 فئات</button>
+              <button class="on" data-v="6">6 فئات</button>
+            </div>
+          </div>
+          <div class="field" style="margin-top: 16px">
+            <label data-i18n="theme_l">الثيم</label>
+            <div class="theme-picker" id="themePicker"></div>
+          </div>
+          <div class="field" style="margin-top: 12px">
+            <label>موسيقى خلفية</label>
+            <div class="seg" id="musicSeg">
+              <button data-v="1">تشغيل 🎵</button>
+              <button class="on" data-v="0">إيقاف</button>
+            </div>
+          </div>
+        </div>
+
+        <button id="startBtn" class="btn btn-gold btn-lg btn-block pulse" data-i18n="start">ابدأ اللعب 🚀</button>
       </section>
 
       <!-- ============ شاشة اللوحة ============ -->
@@ -46,20 +174,21 @@
           <div id="teamCard1" class="team-card t1 active">
             <div class="tname" id="t1Name">الفريق الأول</div>
             <div class="tscore" id="t1Score">0</div>
-            <span class="turn-badge">الدور عليه</span>
+            <span class="turn-badge">◀</span>
             <div class="score-adjust">
               <button onclick="Game.adjust(1,-100)">−100</button>
               <button onclick="Game.adjust(1,100)">+100</button>
             </div>
             <div class="lifelines" id="t1Lifelines"></div>
           </div>
-
-          <div class="vs">VS</div>
-
+          <div class="vs">
+            <div class="vs-text">VS</div>
+            <div class="progress-mini" id="progressMini">0 / 36</div>
+          </div>
           <div id="teamCard2" class="team-card t2">
             <div class="tname" id="t2Name">الفريق الثاني</div>
             <div class="tscore" id="t2Score">0</div>
-            <span class="turn-badge">الدور عليه</span>
+            <span class="turn-badge">▶</span>
             <div class="score-adjust">
               <button onclick="Game.adjust(2,-100)">−100</button>
               <button onclick="Game.adjust(2,100)">+100</button>
@@ -71,29 +200,25 @@
         <div id="board" class="board"></div>
 
         <div class="board-footer">
-          <button class="btn btn-ghost" onclick="Game.toggleTurn()">🔄 تبديل الدور</button>
-          <button class="btn btn-gold" onclick="Game.finish()">🏁 إنهاء اللعبة</button>
+          <button class="btn btn-ghost" data-i18n="switch_turn" onclick="Game.toggleTurn()">🔄 تبديل الدور</button>
+          <button class="btn btn-gold" data-i18n="end_game" onclick="Game.finish()">🏁 إنهاء اللعبة</button>
+          <button class="btn btn-ghost" data-i18n="exit" onclick="Game.home()">🏠 خروج</button>
         </div>
       </section>
 
       <!-- ============ شاشة النتيجة ============ -->
       <section id="resultScreen" class="screen">
-        <div class="brand"><h1>النتيجة</h1></div>
+        <div class="brand"><h1 class="glow-title" data-i18n="result_h">النتيجة</h1></div>
         <div class="card result-card">
           <div class="trophy">🏆</div>
           <div class="winner-name" id="winnerName">—</div>
           <div class="final-scores">
-            <div class="fs t1">
-              <div class="n" id="fsName1">الفريق الأول</div>
-              <div class="s" id="fsScore1">0</div>
-            </div>
-            <div class="fs t2">
-              <div class="n" id="fsName2">الفريق الثاني</div>
-              <div class="s" id="fsScore2">0</div>
-            </div>
+            <div class="fs t1"><div class="n" id="fsName1">الفريق الأول</div><div class="s" id="fsScore1">0</div></div>
+            <div class="fs t2"><div class="n" id="fsName2">الفريق الثاني</div><div class="s" id="fsScore2">0</div></div>
           </div>
           <div class="modal-actions">
-            <button class="btn btn-gold btn-lg" onclick="Game.playAgain()">🔁 لعبة جديدة</button>
+            <button class="btn btn-gold btn-lg" data-i18n="new_game" onclick="Game.playAgain()">🔁 لعبة جديدة</button>
+            <button class="btn btn-ghost btn-lg" onclick="Game.shareResult()">📸 صورة النتيجة</button>
           </div>
         </div>
       </section>
@@ -101,31 +226,152 @@
 
     <!-- ============ نافذة السؤال ============ -->
     <div id="qModal" class="modal">
-      <div class="modal-box">
+      <div class="modal-box q-box">
         <div class="q-meta">
-          <span id="qCat">الفئة</span>
-          <span class="q-points" id="qPoints">200 نقطة</span>
+          <span id="qCat" class="q-cat">الفئة</span>
+          <span class="q-points" id="qPoints">200</span>
           <span class="timer" id="timer">60</span>
         </div>
-
-        <div class="q-text" id="qText">السؤال يظهر هنا</div>
-
-        <div class="answer-box" id="answerBox">
-          <span class="lbl">الإجابة الصحيحة</span>
-          <span id="answerText"></span>
-        </div>
-
+        <div class="timer-bar"><div class="timer-bar-fill" id="timerBar"></div></div>
+        <div class="q-text" id="qText">السؤال</div>
+        <div class="answer-box" id="answerBox"><span class="lbl">الإجابة الصحيحة</span><span id="answerText"></span></div>
+        <div class="steal-note" id="stealNote">🥷 وضع السرقة مفعّل — إن أخطأ صاحب الدور، يجيب الخصم!</div>
         <div class="modal-actions">
-          <button id="showAnswerBtn" class="btn btn-gold btn-lg" onclick="Game.showAnswer()">
-            عرض الإجابة 👁️
-          </button>
+          <button id="pauseBtn" class="btn btn-ghost" onclick="Game.togglePause()">⏸️ إيقاف</button>
+          <button id="showAnswerBtn" class="btn btn-gold btn-lg" onclick="Game.showAnswer()">عرض الإجابة 👁️</button>
         </div>
-
         <div class="award" id="awardRow">
           <p>من أجاب إجابة صحيحة؟</p>
-          <button class="btn btn-ghost" id="awardT1" onclick="Game.award(1)">الفريق الأول ✓</button>
+          <button class="btn btn-team1" id="awardT1" onclick="Game.award(1)">الفريق الأول ✓</button>
           <button class="btn btn-ghost" onclick="Game.award(0)">لا أحد ✗</button>
-          <button class="btn btn-ghost" id="awardT2" onclick="Game.award(2)">الفريق الثاني ✓</button>
+          <button class="btn btn-team2" id="awardT2" onclick="Game.award(2)">الفريق الثاني ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ نافذة الدخول / التسجيل ============ -->
+    <div id="authModal" class="modal">
+      <div class="modal-box auth-box">
+        <button class="icon-btn auth-close" onclick="Game.closeAuth()">✕</button>
+        <div class="auth-brand">جمعة</div>
+        <div class="auth-tabs">
+          <button class="auth-tab on" data-tab="login" onclick="Game.authTab('login')">تسجيل الدخول</button>
+          <button class="auth-tab" data-tab="signup" onclick="Game.authTab('signup')">حساب جديد</button>
+        </div>
+
+        <!-- دخول -->
+        <div class="auth-pane on" id="paneLogin">
+          <div class="field"><label>البريد الإلكتروني</label><input id="loginEmail" type="email" placeholder="you@email.com" /></div>
+          <div class="field"><label>كلمة المرور</label><input id="loginPass" type="password" placeholder="••••••" /></div>
+          <button class="btn btn-gold btn-block" onclick="Game.doLogin()">دخول</button>
+        </div>
+
+        <!-- تسجيل -->
+        <div class="auth-pane" id="paneSignup">
+          <div class="field"><label>اختر أفاتار</label><div class="avatar-grid" id="avatarGrid"></div></div>
+          <div class="field"><label>الاسم</label><input id="suName" type="text" placeholder="اسمك" maxlength="20" /></div>
+          <div class="field"><label>البريد الإلكتروني</label><input id="suEmail" type="email" placeholder="you@email.com" /></div>
+          <div class="field"><label>كلمة المرور</label><input id="suPass" type="password" placeholder="4 أحرف على الأقل" /></div>
+          <button class="btn btn-gold btn-block" onclick="Game.doSignup()">إنشاء الحساب</button>
+        </div>
+
+        <div class="auth-err" id="authErr"></div>
+        <div class="auth-divider"><span>أو</span></div>
+        <button class="btn btn-ghost btn-block" onclick="Game.guest()">🎮 العب كضيف</button>
+      </div>
+    </div>
+
+    <!-- ============ نافذة الملف الشخصي ============ -->
+    <div id="profileModal" class="modal">
+      <div class="modal-box profile-box">
+        <button class="icon-btn auth-close" onclick="Game.closeProfile()">✕</button>
+        <div class="profile-avatar" id="profAvatar">👤</div>
+        <div class="profile-name" id="profName">ضيف</div>
+        <div class="profile-email" id="profEmail"></div>
+        <div class="profile-stats">
+          <div class="ps"><span class="ps-n" id="psGames">0</span><span class="ps-l">لعبة</span></div>
+          <div class="ps"><span class="ps-n" id="psWins">0</span><span class="ps-l">أعلى نقاط</span></div>
+          <div class="ps"><span class="ps-n" id="psCats">0</span><span class="ps-l">فئة خاصة</span></div>
+        </div>
+
+        <div class="prof-section">
+          <h3>🏅 الإنجازات</h3>
+          <div class="badges" id="badges"></div>
+        </div>
+
+        <div class="prof-section">
+          <h3>📜 آخر المباريات</h3>
+          <div class="history-list" id="historyList"></div>
+        </div>
+
+        <div class="modal-actions" id="profActions"></div>
+      </div>
+    </div>
+
+    <!-- ============ نافذة المساعدة ============ -->
+    <div id="helpModal" class="modal">
+      <div class="modal-box help-box">
+        <button class="icon-btn auth-close" onclick="Game.closeHelp()">✕</button>
+        <h2 class="help-title">❓ كيف تلعب جمعة</h2>
+
+        <div class="help-section">
+          <h3>🎯 الفكرة</h3>
+          <p>فريقان يتنافسان على لوحة من 6 فئات. كل فئة فيها أسئلة بقيم <b>200 / 400 / 600</b>. الفريق صاحب الدور يختار خلية، ويُعرض السؤال مع مؤقّت. إن أجاب صحيحاً يكسب النقاط. الأعلى نقاطاً في النهاية يفوز 🏆.</p>
+        </div>
+
+        <div class="help-section">
+          <h3>🛟 وسائل المساعدة (لكل فريق مرة واحدة)</h3>
+          <ul>
+            <li><b>✖️ نقطتك ونص:</b> نقاط السؤال الحالي تُحسب ×1.5 لفريقك.</li>
+            <li><b>🥷 جاوب واسرق:</b> إن أخطأ الخصم، يمكن لفريقك أخذ النقاط.</li>
+            <li><b>📞 وقت إضافي:</b> +30 ثانية على المؤقّت.</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h3>⚡ شوط فاصل</h3>
+          <p>عند التعادل في النهاية، يُعرض سؤال حاسم — أول فريق يجيب صحيحاً يفوز.</p>
+        </div>
+
+        <div class="help-section">
+          <h3>⌨️ اختصارات لوحة المفاتيح</h3>
+          <ul>
+            <li><b>مسافة:</b> عرض الإجابة</li>
+            <li><b>1 / 2:</b> منح النقاط للفريق الأول / الثاني</li>
+            <li><b>0:</b> لا أحد أجاب</li>
+            <li><b>Esc:</b> إغلاق النافذة</li>
+          </ul>
+        </div>
+
+        <button class="btn btn-gold btn-block" onclick="Game.closeHelp()">فهمت، يلا نلعب! 🚀</button>
+      </div>
+    </div>
+
+    <!-- ============ نافذة المحرر ============ -->
+    <div id="editorModal" class="modal">
+      <div class="modal-box editor-box">
+        <div class="editor-head">
+          <h2>✏️ محرر الفئات والأسئلة</h2>
+          <button class="icon-btn" onclick="Game.closeEditor()">✕</button>
+        </div>
+        <p class="hint">أضف فئاتك الخاصة. تُحفظ في حسابك على هذا الجهاز.</p>
+        <div class="editor-grid">
+          <div class="editor-list" id="editorList"></div>
+          <div class="editor-form">
+            <div class="field"><label>اسم الفئة</label><input id="edName" type="text" placeholder="مثال: عواصم العالم" maxlength="24" /></div>
+            <div class="field"><label>أيقونة (إيموجي)</label><input id="edIcon" type="text" placeholder="🌐" maxlength="4" /></div>
+            <div class="ed-q-head"><span>الأسئلة (200 / 400 / 600)</span><button class="btn btn-ghost btn-sm" onclick="Game.edAddQuestion()">+ سؤال</button></div>
+            <div id="edQuestions" class="ed-questions"></div>
+            <div class="editor-actions">
+              <button class="btn btn-gold" onclick="Game.edSave()">💾 حفظ الفئة</button>
+              <button class="btn btn-ghost" onclick="Game.edClear()">جديد</button>
+            </div>
+            <div class="editor-io">
+              <button class="btn btn-ghost btn-sm" onclick="Game.exportData()">⬇️ تصدير</button>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importFile').click()">⬆️ استيراد</button>
+              <input type="file" id="importFile" accept="application/json" style="display:none" onchange="Game.importData(event)" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -133,6 +379,12 @@
     <div id="toast" class="toast"></div>
 
     <script src="questions.js"></script>
+    <script src="questions-extra.js"></script>
+    <script src="questions-kuwait.js"></script>
+    <script src="i18n.js"></script>
+    <script src="auth.js"></script>
+    <script src="sounds.js"></script>
+    <script src="effects.js"></script>
     <script src="game.js"></script>
   </body>
 </html>

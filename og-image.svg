@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff7e0"/>
+      <stop offset="0.5" stop-color="#f3d27a"/>
+      <stop offset="1" stop-color="#8a6d2a"/>
+    </linearGradient>
+    <radialGradient id="bg" cx="50%" cy="20%" r="90%">
+      <stop offset="0" stop-color="#1c2540"/>
+      <stop offset="1" stop-color="#0c0f1a"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="980" cy="120" r="260" fill="#e9b949" opacity="0.08"/>
+  <circle cx="200" cy="540" r="220" fill="#3aa0ff" opacity="0.07"/>
+  <rect x="34" y="34" width="1132" height="562" rx="40" fill="none" stroke="url(#gold)" stroke-width="5" opacity="0.4"/>
+
+  <text x="600" y="300" font-family="Tajawal, Arial, sans-serif" font-size="190"
+        font-weight="900" text-anchor="middle" fill="url(#gold)">جمعة</text>
+  <text x="600" y="385" font-family="Tajawal, Arial, sans-serif" font-size="46"
+        font-weight="800" text-anchor="middle" fill="#f5f1e6">لعبة المسابقات رقم ١</text>
+  <text x="600" y="455" font-family="Tajawal, Arial, sans-serif" font-size="34"
+        font-weight="700" text-anchor="middle" fill="#aeb4c7">فريقان • فئات لا تنتهي • تحدٍّ لا يُنسى</text>
+
+  <g font-family="Tajawal, Arial, sans-serif" font-size="30" font-weight="800" text-anchor="middle">
+    <rect x="380" y="500" width="140" height="60" rx="30" fill="#1a2138" stroke="#e9b949" stroke-width="2"/>
+    <text x="450" y="540" fill="#f3d27a">🎯 34 فئة</text>
+    <rect x="530" y="500" width="160" height="60" rx="30" fill="#1a2138" stroke="#e9b949" stroke-width="2"/>
+    <text x="610" y="540" fill="#f3d27a">❓ 308 سؤال</text>
+    <rect x="700" y="500" width="130" height="60" rx="30" fill="#1a2138" stroke="#e9b949" stroke-width="2"/>
+    <text x="765" y="540" fill="#f3d27a">🏆 العب</text>
+  </g>
+</svg>
