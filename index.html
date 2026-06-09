@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>سين جيم — لعبة المسابقات</title>
+    <meta name="description" content="سين جيم — لعبة مسابقات عربية بين فريقين، فئات وأسئلة ونقاط." />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  </head>
+  <body>
+    <div class="wrap">
+      <!-- ============ شاشة الإعداد ============ -->
+      <section id="setupScreen" class="screen active">
+        <div class="brand">
+          <h1>سين جيم</h1>
+          <p>لعبة المسابقات — فريقان يتنافسان على الفئات والنقاط</p>
+        </div>
+
+        <div class="card">
+          <h2>🎯 أسماء الفريقين</h2>
+          <div class="teams-inputs">
+            <div class="field">
+              <label for="team1">الفريق الأول</label>
+              <input id="team1" type="text" placeholder="الفريق الأزرق" maxlength="20" />
+            </div>
+            <div class="field">
+              <label for="team2">الفريق الثاني</label>
+              <input id="team2" type="text" placeholder="الفريق الأحمر" maxlength="20" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>📚 اختر الفئات</h2>
+          <p class="hint">اختر <b>6 فئات</b> بالضبط للعب — <span id="catCounter">0 / 6</span></p>
+          <div id="catsGrid" class="cats-grid"></div>
+        </div>
+
+        <button id="startBtn" class="btn btn-gold btn-lg btn-block">ابدأ اللعب 🚀</button>
+      </section>
+
+      <!-- ============ شاشة اللوحة ============ -->
+      <section id="boardScreen" class="screen">
+        <div class="scoreboard">
+          <div id="teamCard1" class="team-card t1 active">
+            <div class="tname" id="t1Name">الفريق الأول</div>
+            <div class="tscore" id="t1Score">0</div>
+            <span class="turn-badge">الدور عليه</span>
+            <div class="score-adjust">
+              <button onclick="Game.adjust(1,-100)">−100</button>
+              <button onclick="Game.adjust(1,100)">+100</button>
+            </div>
+            <div class="lifelines" id="t1Lifelines"></div>
+          </div>
+
+          <div class="vs">VS</div>
+
+          <div id="teamCard2" class="team-card t2">
+            <div class="tname" id="t2Name">الفريق الثاني</div>
+            <div class="tscore" id="t2Score">0</div>
+            <span class="turn-badge">الدور عليه</span>
+            <div class="score-adjust">
+              <button onclick="Game.adjust(2,-100)">−100</button>
+              <button onclick="Game.adjust(2,100)">+100</button>
+            </div>
+            <div class="lifelines" id="t2Lifelines"></div>
+          </div>
+        </div>
+
+        <div id="board" class="board"></div>
+
+        <div class="board-footer">
+          <button class="btn btn-ghost" onclick="Game.toggleTurn()">🔄 تبديل الدور</button>
+          <button class="btn btn-gold" onclick="Game.finish()">🏁 إنهاء اللعبة</button>
+        </div>
+      </section>
+
+      <!-- ============ شاشة النتيجة ============ -->
+      <section id="resultScreen" class="screen">
+        <div class="brand"><h1>النتيجة</h1></div>
+        <div class="card result-card">
+          <div class="trophy">🏆</div>
+          <div class="winner-name" id="winnerName">—</div>
+          <div class="final-scores">
+            <div class="fs t1">
+              <div class="n" id="fsName1">الفريق الأول</div>
+              <div class="s" id="fsScore1">0</div>
+            </div>
+            <div class="fs t2">
+              <div class="n" id="fsName2">الفريق الثاني</div>
+              <div class="s" id="fsScore2">0</div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-gold btn-lg" onclick="Game.playAgain()">🔁 لعبة جديدة</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ نافذة السؤال ============ -->
+    <div id="qModal" class="modal">
+      <div class="modal-box">
+        <div class="q-meta">
+          <span id="qCat">الفئة</span>
+          <span class="q-points" id="qPoints">200 نقطة</span>
+          <span class="timer" id="timer">60</span>
+        </div>
+
+        <div class="q-text" id="qText">السؤال يظهر هنا</div>
+
+        <div class="answer-box" id="answerBox">
+          <span class="lbl">الإجابة الصحيحة</span>
+          <span id="answerText"></span>
+        </div>
+
+        <div class="modal-actions">
+          <button id="showAnswerBtn" class="btn btn-gold btn-lg" onclick="Game.showAnswer()">
+            عرض الإجابة 👁️
+          </button>
+        </div>
+
+        <div class="award" id="awardRow">
+          <p>من أجاب إجابة صحيحة؟</p>
+          <button class="btn btn-ghost" id="awardT1" onclick="Game.award(1)">الفريق الأول ✓</button>
+          <button class="btn btn-ghost" onclick="Game.award(0)">لا أحد ✗</button>
+          <button class="btn btn-ghost" id="awardT2" onclick="Game.award(2)">الفريق الثاني ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="questions.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>
