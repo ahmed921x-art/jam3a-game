@@ -850,6 +850,8 @@ const Game = (() => {
         stopTimer();
         Sound.timeout();
         toast("⏰ انتهى الوقت!");
+        // عرض الإجابة تلقائياً عند انتهاء الوقت
+        if (!$("#answerBox").classList.contains("show")) showAnswer();
       }
     }, 1000);
   }
@@ -1179,7 +1181,7 @@ const Game = (() => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "seenjeem-categories.json";
+    a.download = "jam3a-categories.json";
     a.click();
     URL.revokeObjectURL(url);
     toast("⬇️ تم التصدير");
@@ -1285,7 +1287,7 @@ const Game = (() => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "seenjeem-result.png";
+      link.download = "jam3a-result.png";
       link.click();
       URL.revokeObjectURL(url);
       toast("📸 تم حفظ صورة النتيجة");
@@ -1363,6 +1365,8 @@ const Game = (() => {
         e.preventDefault();
         if (!$("#answerBox").classList.contains("show")) showAnswer();
       }
+      // منح النقاط بالكيبورد فقط بعد عرض الإجابة
+      if (!$("#answerBox").classList.contains("show")) return;
       if (e.key === "1") award(1);
       if (e.key === "2") award(2);
       if (e.key === "0") award(0);

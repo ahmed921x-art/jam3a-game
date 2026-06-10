@@ -1,5 +1,5 @@
 /* جمعة — Service Worker للعمل بدون اتصال */
-const CACHE = "seenjeem-v8";
+const CACHE = "jam3a-v9";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./questions.js",
   "./questions-extra.js",
   "./questions-kuwait.js",
+  "./questions-pack2.js",
   "./i18n.js",
   "./auth.js",
   "./sounds.js",
