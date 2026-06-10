@@ -1,5 +1,5 @@
 /* جمعة — Service Worker للعمل بدون اتصال */
-const CACHE = "jam3a-v10";
+const CACHE = "jam3a-v11";
 const ASSETS = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const ASSETS = [
   "./questions-kuwait.js",
   "./questions-pack2.js",
   "./i18n.js",
+  "./firebase-config.js",
   "./auth.js",
   "./sounds.js",
   "./effects.js",

@@ -1,140 +1,150 @@
 /* ===========================================================
-   جمعة — نظام الحسابات (محلي، يعمل بدون سيرفر)
-   تخزين الحسابات في localStorage مع تجزئة بسيطة لكلمة المرور.
-   ملاحظة: للحماية الحقيقية عبر الأجهزة استبدل بـ Firebase Auth.
+   جمعة — نظام الحسابات (Firebase Auth + Firestore)
+   نفس الواجهة القديمة: Auth.current() / Auth.key() / Auth.onChange()
+   + دخول Google + مزامنة سحابية للإحصائيات والفئات الخاصة
    =========================================================== */
 
 const Auth = (() => {
-  const K_USERS = "sj_users";
-  const K_SESSION = "sj_session";
+  const GUEST = { id: "guest", name: "ضيف", email: null, avatar: "👤", guest: true };
+  const SYNC_BASES = ["stats", "history", "custom", "ach"]; // ما يُزامَن سحابياً
   const listeners = [];
 
-  function read(k, def) {
-    try {
-      return JSON.parse(localStorage.getItem(k)) ?? def;
-    } catch {
-      return def;
-    }
-  }
-  function write(k, v) {
-    localStorage.setItem(k, JSON.stringify(v));
-  }
-
-  // تجزئة بسيطة (ليست تشفيراً قوياً — للاستخدام المحلي فقط)
-  function hash(str) {
-    let h = 5381;
-    const salt = "seenjeem~salt~9x";
-    const s = salt + str + salt;
-    for (let i = 0; i < s.length; i++) {
-      h = (h * 33) ^ s.charCodeAt(i);
-    }
-    return (h >>> 0).toString(16);
-  }
-
-  function users() {
-    return read(K_USERS, {});
-  }
-
-  const GUEST = { id: "guest", name: "ضيف", email: null, avatar: "👤", guest: true };
+  let user = GUEST; // نسخة متزامنة — Auth.current() تبقى فورية
+  let syncTimer = null;
+  const pendingSync = {};
 
   function current() {
-    const email = localStorage.getItem(K_SESSION);
-    if (!email) return GUEST;
-    const u = users()[email.toLowerCase()];
-    return u ? sanitize(u) : GUEST;
+    return user;
   }
-
-  function sanitize(u) {
-    return { id: u.id, name: u.name, email: u.email, avatar: u.avatar, guest: false };
-  }
-
   function isLoggedIn() {
-    return !current().guest;
-  }
-
-  function emit() {
-    const u = current();
-    listeners.forEach((cb) => cb(u));
+    return !user.guest;
   }
   function onChange(cb) {
     listeners.push(cb);
   }
-
-  function validEmail(e) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  function emit() {
+    listeners.forEach((cb) => cb(user));
   }
 
-  function signup({ name, email, pass, avatar }) {
-    name = (name || "").trim();
-    email = (email || "").trim().toLowerCase();
-    if (name.length < 2) return { ok: false, error: "الاسم قصير جداً" };
-    if (!validEmail(email)) return { ok: false, error: "البريد غير صالح" };
-    if ((pass || "").length < 4) return { ok: false, error: "كلمة المرور 4 أحرف على الأقل" };
-    const db = users();
-    if (db[email]) return { ok: false, error: "هذا البريد مسجّل مسبقاً" };
-    const user = {
-      id: "u_" + Date.now().toString(36),
-      name,
-      email,
-      avatar: avatar || "🦊",
-      hash: hash(pass),
-      createdAt: Date.now(),
-    };
-    db[email] = user;
-    write(K_USERS, db);
-    localStorage.setItem(K_SESSION, email);
-    emit();
-    return { ok: true, user: sanitize(user) };
+  // مفتاح تخزين محلي خاص بالمستخدم الحالي
+  function key(base) {
+    return `sj_u_${user.id}_${base}`;
   }
 
-  function login(email, pass) {
-    email = (email || "").trim().toLowerCase();
-    const u = users()[email];
-    if (!u) return { ok: false, error: "لا يوجد حساب بهذا البريد" };
-    if (u.hash !== hash(pass)) return { ok: false, error: "كلمة المرور غير صحيحة" };
-    localStorage.setItem(K_SESSION, email);
-    emit();
-    return { ok: true, user: sanitize(u) };
+  function lsRead(base) {
+    try {
+      return JSON.parse(localStorage.getItem(key(base)));
+    } catch {
+      return null;
+    }
+  }
+
+  function userDoc() {
+    return FB.db.collection("users").doc(user.id);
+  }
+
+  // ---------- المزامنة السحابية ----------
+  // تُستدعى من uWrite في game.js بعد كل كتابة محلية (دمج مع مهلة قصيرة)
+  function cloudSet(base, value) {
+    if (user.guest || !SYNC_BASES.includes(base)) return;
+    pendingSync[base] = value;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      const batch = { ...pendingSync, updatedAt: Date.now() };
+      Object.keys(pendingSync).forEach((k) => delete pendingSync[k]);
+      userDoc().set(batch, { merge: true }).catch(() => {});
+    }, 800);
+  }
+
+  // عند الدخول: السحابة هي المرجع إن وُجدت، وإلا نرفع المحلي
+  async function pullCloud() {
+    try {
+      const snap = await userDoc().get();
+      const data = snap.exists ? snap.data() : {};
+      const up = {};
+      SYNC_BASES.forEach((base) => {
+        if (data[base] !== undefined && data[base] !== null) {
+          localStorage.setItem(key(base), JSON.stringify(data[base]));
+        } else {
+          const local = lsRead(base);
+          if (local !== null) up[base] = local;
+        }
+      });
+      // الملف الشخصي (اسم/أفاتار) المخزن سحابياً يغلب
+      if (data.profile) {
+        user = { ...user, name: data.profile.name || user.name, avatar: data.profile.avatar || user.avatar };
+      } else {
+        up.profile = { name: user.name, avatar: user.avatar };
+      }
+      if (Object.keys(up).length) {
+        up.email = user.email;
+        up.updatedAt = Date.now();
+        await userDoc().set(up, { merge: true });
+      }
+    } catch (e) {
+      // بدون اتصال: نكمل محلياً وستتم المزامنة لاحقاً
+    }
+  }
+
+  // ---------- الدخول والخروج ----------
+  async function googleLogin() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      await FB.auth.signInWithPopup(provider);
+      return { ok: true };
+    } catch (e) {
+      // بعض المتصفحات/الجوالات تمنع النوافذ المنبثقة → إعادة توجيه
+      if (e && (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment")) {
+        await FB.auth.signInWithRedirect(provider);
+        return { ok: true };
+      }
+      return { ok: false, error: e && e.code ? e.code : "تعذّر تسجيل الدخول" };
+    }
   }
 
   function logout() {
-    localStorage.removeItem(K_SESSION);
-    emit();
+    FB.auth.signOut().catch(() => {});
   }
-
   function continueAsGuest() {
-    localStorage.removeItem(K_SESSION);
-    emit();
+    if (isLoggedIn()) logout();
+    else emit();
   }
 
-  // تحديث الملف الشخصي (اسم/أفاتار)
   function updateProfile({ name, avatar }) {
-    const u = current();
-    if (u.guest) return { ok: false };
-    const db = users();
-    const rec = db[u.email];
-    if (!rec) return { ok: false };
-    if (name) rec.name = name.trim();
-    if (avatar) rec.avatar = avatar;
-    write(K_USERS, db);
+    if (user.guest) return { ok: false };
+    if (name) user.name = name.trim();
+    if (avatar) user.avatar = avatar;
+    userDoc().set({ profile: { name: user.name, avatar: user.avatar } }, { merge: true }).catch(() => {});
     emit();
     return { ok: true };
   }
 
-  // مفتاح تخزين خاص بالمستخدم الحالي (للإحصائيات والفئات والحفظ)
-  function key(base) {
-    return `sj_u_${current().id}_${base}`;
-  }
+  // ---------- مراقبة حالة الدخول ----------
+  FB.auth.onAuthStateChanged(async (u) => {
+    if (u) {
+      user = {
+        id: u.uid,
+        name: u.displayName || "لاعب",
+        email: u.email,
+        avatar: "🦊",
+        guest: false,
+      };
+      await pullCloud();
+    } else {
+      user = GUEST;
+    }
+    emit();
+  });
 
   return {
     current,
     isLoggedIn,
-    signup,
-    login,
+    onChange,
+    key,
+    googleLogin,
     logout,
     continueAsGuest,
     updateProfile,
-    onChange,
-    key,
+    cloudSet,
   };
 })();

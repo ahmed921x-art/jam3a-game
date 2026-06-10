@@ -16,7 +16,6 @@ const Game = (() => {
     { id: "phone", label: "وقت إضافي", icon: "📞" },
   ];
 
-  const AVATARS = ["🦊", "🐱", "🐼", "🦁", "🐯", "🐨", "🐸", "🦄", "🐲", "👑", "🤖", "👻", "⭐", "🔥", "⚡", "🎯"];
   const TEAM_COLORS = ["#3aa0ff", "#ff5d73", "#34d399", "#a78bfa", "#f59e0b", "#ec4899"];
 
   // الإنجازات: شرط لكل إنجاز يعتمد على الإحصائيات
@@ -55,7 +54,6 @@ const Game = (() => {
     settings: { seconds: 60, random: true, sound: true, golden: false },
     themeIndex: 0,
     teamColors: ["#3aa0ff", "#ff5d73"],
-    suAvatar: "🦊",
   };
 
   let customCats = [];
@@ -100,6 +98,7 @@ const Game = (() => {
   }
   function uWrite(base, v) {
     localStorage.setItem(Auth.key(base), JSON.stringify(v));
+    Auth.cloudSet(base, v); // مزامنة سحابية للمسجلين (تتجاهل الضيف تلقائياً)
   }
 
   function loadCustom() {
@@ -272,26 +271,7 @@ const Game = (() => {
     $("#pcName").textContent = u.guest ? "دخول" : u.name;
   }
 
-  function buildAvatarGrid() {
-    const g = $("#avatarGrid");
-    g.innerHTML = "";
-    AVATARS.forEach((a, i) => {
-      const el = document.createElement("button");
-      el.type = "button";
-      el.className = "avatar-opt" + (i === 0 ? " on" : "");
-      el.textContent = a;
-      el.addEventListener("click", () => {
-        $$("#avatarGrid .avatar-opt").forEach((x) => x.classList.remove("on"));
-        el.classList.add("on");
-        state.suAvatar = a;
-      });
-      g.appendChild(el);
-    });
-    state.suAvatar = AVATARS[0];
-  }
-
   function openAuth() {
-    authTab("login");
     $("#authErr").textContent = "";
     $("#authModal").classList.add("active");
     Sound.open();
@@ -299,40 +279,18 @@ const Game = (() => {
   function closeAuth() {
     $("#authModal").classList.remove("active");
   }
-  function authTab(tab) {
-    $$(".auth-tab").forEach((t) => t.classList.toggle("on", t.dataset.tab === tab));
-    $("#paneLogin").classList.toggle("on", tab === "login");
-    $("#paneSignup").classList.toggle("on", tab === "signup");
-    $("#authErr").textContent = "";
-  }
 
-  function doLogin() {
-    const r = Auth.login($("#loginEmail").value, $("#loginPass").value);
+  async function googleLogin() {
+    $("#authErr").textContent = "";
+    const r = await Auth.googleLogin();
     if (!r.ok) {
-      $("#authErr").textContent = r.error;
+      $("#authErr").textContent = "تعذّر تسجيل الدخول — حاول مرة أخرى";
       Sound.wrong();
       return;
     }
     Sound.correct();
     closeAuth();
-    toast("👋 أهلاً " + r.user.name);
-  }
-
-  function doSignup() {
-    const r = Auth.signup({
-      name: $("#suName").value,
-      email: $("#suEmail").value,
-      pass: $("#suPass").value,
-      avatar: state.suAvatar,
-    });
-    if (!r.ok) {
-      $("#authErr").textContent = r.error;
-      Sound.wrong();
-      return;
-    }
-    Sound.win();
-    closeAuth();
-    toast("🎉 تم إنشاء حسابك، أهلاً " + r.user.name);
+    toast("👋 تم تسجيل الدخول");
   }
 
   function guest() {
@@ -1444,7 +1402,6 @@ const Game = (() => {
     applyLang(localStorage.getItem(LS_LANG) || "ar");
 
     FX.starfield("starfield");
-    buildAvatarGrid();
     buildColorPickers();
     buildThemePicker();
     bindSettings();
@@ -1504,7 +1461,7 @@ const Game = (() => {
     playAgain, home, resume, discardSave, goLanding, playClick,
     openEditor, closeEditor, edAddQuestion, edSave, edClear, exportData, importData,
     toggleSound, toggleFullscreen, cycleTheme, setTheme, toggleLang,
-    openProfile, closeProfile, openAuth, closeAuth, authTab, doLogin, doSignup, guest,
+    openProfile, closeProfile, openAuth, closeAuth, googleLogin, guest,
     openHelp, closeHelp, shareResult,
     goldenShowQuestion, goldenReveal, goldenSetResult, goldenApply,
   };

@@ -304,32 +304,15 @@
       </div>
     </div>
 
-    <!-- ============ نافذة الدخول / التسجيل ============ -->
+    <!-- ============ نافذة الدخول ============ -->
     <div id="authModal" class="modal">
       <div class="modal-box auth-box">
         <button class="icon-btn auth-close" onclick="Game.closeAuth()">✕</button>
         <div class="auth-brand">جمعة</div>
-        <div class="auth-tabs">
-          <button class="auth-tab on" data-tab="login" onclick="Game.authTab('login')">تسجيل الدخول</button>
-          <button class="auth-tab" data-tab="signup" onclick="Game.authTab('signup')">حساب جديد</button>
-        </div>
-
-        <!-- دخول -->
-        <div class="auth-pane on" id="paneLogin">
-          <div class="field"><label>البريد الإلكتروني</label><input id="loginEmail" type="email" placeholder="you@email.com" /></div>
-          <div class="field"><label>كلمة المرور</label><input id="loginPass" type="password" placeholder="••••••" /></div>
-          <button class="btn btn-gold btn-block" onclick="Game.doLogin()">دخول</button>
-        </div>
-
-        <!-- تسجيل -->
-        <div class="auth-pane" id="paneSignup">
-          <div class="field"><label>اختر أفاتار</label><div class="avatar-grid" id="avatarGrid"></div></div>
-          <div class="field"><label>الاسم</label><input id="suName" type="text" placeholder="اسمك" maxlength="20" /></div>
-          <div class="field"><label>البريد الإلكتروني</label><input id="suEmail" type="email" placeholder="you@email.com" /></div>
-          <div class="field"><label>كلمة المرور</label><input id="suPass" type="password" placeholder="4 أحرف على الأقل" /></div>
-          <button class="btn btn-gold btn-block" onclick="Game.doSignup()">إنشاء الحساب</button>
-        </div>
-
+        <p class="hint" style="text-align:center">سجّل دخولك لحفظ إحصائياتك وفئاتك الخاصة عبر جميع أجهزتك</p>
+        <button class="btn btn-gold btn-block" onclick="Game.googleLogin()">
+          الدخول بحساب Google
+        </button>
         <div class="auth-err" id="authErr"></div>
         <div class="auth-divider"><span>أو</span></div>
         <button class="btn btn-ghost btn-block" onclick="Game.guest()">🎮 العب كضيف</button>
@@ -443,6 +426,10 @@
     <script src="questions-kuwait.js"></script>
     <script src="questions-pack2.js"></script>
     <script src="i18n.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
     <script src="sounds.js"></script>
     <script src="effects.js"></script>
