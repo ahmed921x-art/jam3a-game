@@ -163,6 +163,13 @@
               <button class="on" data-v="0">إيقاف</button>
             </div>
           </div>
+          <div class="field" style="margin-top: 12px">
+            <label data-i18n="golden_l">👑 الجولة الذهبية (رهان نقاط على سؤال أخير)</label>
+            <div class="seg" id="goldenSeg">
+              <button data-v="1" data-i18n="golden_on">تشغيل 👑</button>
+              <button class="on" data-v="0" data-i18n="golden_off">إيقاف</button>
+            </div>
+          </div>
         </div>
 
         <button id="startBtn" class="btn btn-gold btn-lg btn-block pulse" data-i18n="start">ابدأ اللعب 🚀</button>
@@ -213,8 +220,8 @@
           <div class="trophy">🏆</div>
           <div class="winner-name" id="winnerName">—</div>
           <div class="final-scores">
-            <div class="fs t1"><div class="n" id="fsName1">الفريق الأول</div><div class="s" id="fsScore1">0</div></div>
-            <div class="fs t2"><div class="n" id="fsName2">الفريق الثاني</div><div class="s" id="fsScore2">0</div></div>
+            <div class="fs t1"><div class="n" id="fsName1">الفريق الأول</div><div class="s" id="fsScore1">0</div><div class="fc" id="fsCorrect1"></div></div>
+            <div class="fs t2"><div class="n" id="fsName2">الفريق الثاني</div><div class="s" id="fsScore2">0</div><div class="fc" id="fsCorrect2"></div></div>
           </div>
           <div class="modal-actions">
             <button class="btn btn-gold btn-lg" data-i18n="new_game" onclick="Game.playAgain()">🔁 لعبة جديدة</button>
@@ -245,6 +252,54 @@
           <button class="btn btn-team1" id="awardT1" onclick="Game.award(1)">الفريق الأول ✓</button>
           <button class="btn btn-ghost" onclick="Game.award(0)">لا أحد ✗</button>
           <button class="btn btn-team2" id="awardT2" onclick="Game.award(2)">الفريق الثاني ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ نافذة الجولة الذهبية ============ -->
+    <div id="goldenModal" class="modal">
+      <div class="modal-box golden-box">
+        <h2 class="golden-title">👑 الجولة الذهبية</h2>
+
+        <!-- مرحلة الرهان -->
+        <div id="goldStageWager">
+          <p class="hint golden-hint">كل فريق يراهن بجزء من نقاطه — الإجابة الصحيحة تضيف الرهان، والخاطئة تخصمه!</p>
+          <div class="gold-teams">
+            <div class="gold-team t1">
+              <div class="gt-name" id="gtName1">الفريق الأول</div>
+              <div class="gt-score" id="gtScore1"></div>
+              <input id="wager1" type="number" inputmode="numeric" min="0" value="0" />
+            </div>
+            <div class="gold-team t2">
+              <div class="gt-name" id="gtName2">الفريق الثاني</div>
+              <div class="gt-score" id="gtScore2"></div>
+              <input id="wager2" type="number" inputmode="numeric" min="0" value="0" />
+            </div>
+          </div>
+          <button class="btn btn-gold btn-lg btn-block" onclick="Game.goldenShowQuestion()">اعرض السؤال 👑</button>
+        </div>
+
+        <!-- مرحلة السؤال والحكم -->
+        <div id="goldStageQ" style="display: none">
+          <div class="q-text" id="goldQText">السؤال</div>
+          <div class="answer-box" id="goldAnswerBox"><span class="lbl">الإجابة الصحيحة</span><span id="goldAnswerText"></span></div>
+          <div class="modal-actions">
+            <button id="goldRevealBtn" class="btn btn-gold btn-lg" onclick="Game.goldenReveal()">عرض الإجابة 👁️</button>
+          </div>
+          <div id="goldJudge" style="display: none">
+            <p class="hint">من أجاب إجابة صحيحة؟</p>
+            <div class="gj-row" id="gjRow1">
+              <span class="gj-name" id="gjName1">الفريق الأول</span>
+              <button class="gj-btn" data-ok="1" onclick="Game.goldenSetResult(1, true)">صح ✓</button>
+              <button class="gj-btn" data-ok="0" onclick="Game.goldenSetResult(1, false)">خطأ ✗</button>
+            </div>
+            <div class="gj-row" id="gjRow2">
+              <span class="gj-name" id="gjName2">الفريق الثاني</span>
+              <button class="gj-btn" data-ok="1" onclick="Game.goldenSetResult(2, true)">صح ✓</button>
+              <button class="gj-btn" data-ok="0" onclick="Game.goldenSetResult(2, false)">خطأ ✗</button>
+            </div>
+            <button class="btn btn-gold btn-lg btn-block" onclick="Game.goldenApply()">اعتماد النتيجة 🏁</button>
+          </div>
         </div>
       </div>
     </div>
@@ -331,6 +386,11 @@
         <div class="help-section">
           <h3>⚡ شوط فاصل</h3>
           <p>عند التعادل في النهاية، يُعرض سؤال حاسم — أول فريق يجيب صحيحاً يفوز.</p>
+        </div>
+
+        <div class="help-section">
+          <h3>👑 الجولة الذهبية (اختيارية)</h3>
+          <p>فعّلها من الإعدادات: قبل إعلان النتيجة، كل فريق يراهن بجزء من نقاطه على سؤال أخير. إجابة صحيحة <b>تضيف</b> الرهان، وخاطئة <b>تخصمه</b> — قلبة طاولة حقيقية!</p>
         </div>
 
         <div class="help-section">

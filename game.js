@@ -33,6 +33,7 @@ const Game = (() => {
     { id: "q500", icon: "📚", name: "خمسمئة سؤال", test: (s) => (s.q || 0) >= 500 },
     { id: "creator", icon: "✏️", name: "مبدع (أنشأ فئة)", test: (s, ctx) => ctx.customCount >= 1 },
     { id: "polyglot", icon: "🎨", name: "ذوّاق (جرّب 3 ثيمات)", test: (s) => (s.themesUsed || 0) >= 3 },
+    { id: "golden1", icon: "👑", name: "مجازف (لعب الجولة الذهبية)", test: (s) => (s.golden || 0) >= 1 },
   ];
 
   const state = {
@@ -48,7 +49,10 @@ const Game = (() => {
     multiplier: 1,
     multiplierTeam: 0,
     stealArmed: false,
-    settings: { seconds: 60, random: true, sound: true },
+    answerShown: false,
+    goldenPlayed: false,
+    golden: null,
+    settings: { seconds: 60, random: true, sound: true, golden: false },
     themeIndex: 0,
     teamColors: ["#3aa0ff", "#ff5d73"],
     suAvatar: "🦊",
@@ -147,6 +151,7 @@ const Game = (() => {
       cats: state.cats,
       settings: state.settings,
       teamColors: state.teamColors,
+      goldenPlayed: state.goldenPlayed,
     });
   }
   function clearSave() {
@@ -586,6 +591,17 @@ const Game = (() => {
       saveSettings();
       Sound.click();
     });
+    const gSeg = $("#goldenSeg");
+    if (gSeg)
+      gSeg.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        $$("#goldenSeg button").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        state.settings.golden = b.dataset.v === "1";
+        saveSettings();
+        Sound.click();
+      });
     const ccSeg = $("#catCountSeg");
     if (ccSeg)
       ccSeg.addEventListener("click", (e) => {
@@ -614,6 +630,9 @@ const Game = (() => {
     );
     $$("#catCountSeg button").forEach((b) =>
       b.classList.toggle("on", +b.dataset.v === catTarget())
+    );
+    $$("#goldenSeg button").forEach((b) =>
+      b.classList.toggle("on", (b.dataset.v === "1") === !!state.settings.golden)
     );
     Sound.setEnabled(state.settings.sound);
     $("#soundBtn").textContent = state.settings.sound ? "🔊" : "🔇";
@@ -648,9 +667,10 @@ const Game = (() => {
       return toast(`اختر ${catTarget()} فئات بالضبط`);
     const n1 = $("#team1").value.trim() || "الفريق الأول";
     const n2 = $("#team2").value.trim() || "الفريق الثاني";
-    state.teams[0] = { name: n1, score: 0, lifelines: cloneLifelines() };
-    state.teams[1] = { name: n2, score: 0, lifelines: cloneLifelines() };
+    state.teams[0] = { name: n1, score: 0, correct: 0, lifelines: cloneLifelines() };
+    state.teams[1] = { name: n2, score: 0, correct: 0, lifelines: cloneLifelines() };
     state.turn = 1;
+    state.goldenPlayed = false;
 
     const cats = allCats();
     state.cats = state.selectedCats.map((i) => {
@@ -816,6 +836,7 @@ const Game = (() => {
     state.multiplier = 1;
     state.multiplierTeam = 0;
     state.stealArmed = false;
+    state.answerShown = false;
 
     $("#qCat").textContent = state.cats[ci].name;
     $("#qPoints").textContent = q.points;
@@ -851,7 +872,7 @@ const Game = (() => {
         Sound.timeout();
         toast("⏰ انتهى الوقت!");
         // عرض الإجابة تلقائياً عند انتهاء الوقت
-        if (!$("#answerBox").classList.contains("show")) showAnswer();
+        if (!state.answerShown) showAnswer();
       }
     }, 1000);
   }
@@ -877,6 +898,7 @@ const Game = (() => {
   }
 
   function showAnswer() {
+    state.answerShown = true;
     state.timer.paused = true;
     $("#answerBox").classList.add("show");
     $("#showAnswerBtn").style.display = "none";
@@ -897,6 +919,7 @@ const Game = (() => {
         return;
       }
       state.teams[team - 1].score += 100; // نقطة الحسم
+      state.teams[team - 1].correct = (state.teams[team - 1].correct || 0) + 1;
       Sound.correct();
       FX.confettiBurst(window.innerWidth / 2, window.innerHeight / 2, 60, 1.3);
       closeQuestion();
@@ -910,6 +933,7 @@ const Game = (() => {
       let mult = state.multiplier > 1 && state.multiplierTeam === team ? state.multiplier : 1;
       const gained = Math.round(points * mult);
       state.teams[team - 1].score += gained;
+      state.teams[team - 1].correct = (state.teams[team - 1].correct || 0) + 1;
       Sound.correct();
       const r = cell.getBoundingClientRect();
       FX.confettiBurst(r.left + r.width / 2, r.top + r.height / 2, 40, 1);
@@ -936,6 +960,7 @@ const Game = (() => {
     state.current = null;
     state.multiplier = 1;
     state.stealArmed = false;
+    state.answerShown = false;
     $("#qModal").classList.remove("active");
   }
   function allDone() {
@@ -948,6 +973,11 @@ const Game = (() => {
   function finish() {
     stopTimer();
     $("#qModal").classList.remove("active");
+    // الجولة الذهبية قبل إعلان النتيجة (إن كانت مفعّلة)
+    if (state.settings.golden && !state.goldenPlayed) {
+      openGolden();
+      return;
+    }
     const [a, b] = state.teams;
     // تعادل → شوط فاصل حاسم
     if (a.score === b.score) {
@@ -957,12 +987,100 @@ const Game = (() => {
     endGame();
   }
 
+  // ====================================================
+  //  👑 الجولة الذهبية — رهان نقاط على سؤال أخير
+  // ====================================================
+  function goldenPool() {
+    const pool = [];
+    allCats().forEach((c) => c.questions.forEach((q) => { if (q.points === 600) pool.push(q); }));
+    return pool.length ? pool : allCats().flatMap((c) => c.questions);
+  }
+
+  function openGolden() {
+    const pool = goldenPool();
+    const q = pool[(Math.random() * pool.length) | 0];
+    state.golden = { q: q.q, a: q.a, wagers: [0, 0], results: [null, null], revealed: false };
+
+    [1, 2].forEach((t) => {
+      const team = state.teams[t - 1];
+      $(`#gtName${t}`).textContent = team.name;
+      $(`#gtScore${t}`).textContent = `رصيدك: ${team.score}`;
+      const inp = $(`#wager${t}`);
+      inp.value = 0;
+      inp.max = Math.max(0, team.score);
+    });
+    $("#goldStageWager").style.display = "";
+    $("#goldStageQ").style.display = "none";
+    $("#goldJudge").style.display = "none";
+    $("#goldAnswerBox").classList.remove("show");
+    $("#goldRevealBtn").style.display = "";
+    $("#goldenModal").classList.add("active");
+    Sound.open();
+    toast("👑 الجولة الذهبية! راهنوا بحكمة");
+  }
+
+  function goldenShowQuestion() {
+    [1, 2].forEach((t) => {
+      const max = Math.max(0, state.teams[t - 1].score);
+      let w = Math.round(+$(`#wager${t}`).value || 0);
+      w = Math.min(Math.max(0, w), max);
+      state.golden.wagers[t - 1] = w;
+    });
+    $("#goldQText").textContent = state.golden.q;
+    $("#goldAnswerText").textContent = state.golden.a;
+    $("#goldStageWager").style.display = "none";
+    $("#goldStageQ").style.display = "";
+    Sound.select();
+  }
+
+  function goldenReveal() {
+    state.golden.revealed = true;
+    $("#goldAnswerBox").classList.add("show");
+    $("#goldRevealBtn").style.display = "none";
+    $("#goldJudge").style.display = "";
+    [1, 2].forEach((t) => {
+      $(`#gjName${t}`).textContent = state.teams[t - 1].name;
+    });
+    Sound.select();
+  }
+
+  function goldenSetResult(team, ok) {
+    state.golden.results[team - 1] = ok;
+    $$(`#gjRow${team} .gj-btn`).forEach((b) => {
+      b.classList.toggle("on", (b.dataset.ok === "1") === ok);
+    });
+    Sound.click();
+  }
+
+  function goldenApply() {
+    const g = state.golden;
+    if (g.results.some((r) => r === null)) return toast("حدد نتيجة الفريقين أولاً");
+    [0, 1].forEach((i) => {
+      if (g.wagers[i] > 0) {
+        state.teams[i].score += g.results[i] ? g.wagers[i] : -g.wagers[i];
+        if (g.results[i]) state.teams[i].correct = (state.teams[i].correct || 0) + 1;
+      }
+    });
+    state.goldenPlayed = true;
+    state.golden = null;
+    $("#goldenModal").classList.remove("active");
+    refreshScores(true);
+    // إحصائية الجولة الذهبية
+    const st = getStats();
+    st.golden = (st.golden || 0) + 1;
+    saveStats(st);
+    FX.confettiBurst(window.innerWidth / 2, window.innerHeight / 3, 50, 1.2);
+    Sound.win();
+    setTimeout(finish, 900);
+  }
+
   // ===== شوط فاصل =====
   function startTieBreaker() {
     const pool = [];
     allCats().forEach((c) => c.questions.forEach((q) => pool.push(q)));
     const q = pool[(Math.random() * pool.length) | 0];
     state.current = { tie: true, points: 0, q: q.q, a: q.a };
+    state.answerShown = false;
 
     $("#qCat").textContent = "⚡ شوط فاصل حاسم";
     $("#qPoints").textContent = "الفوز";
@@ -991,6 +1109,8 @@ const Game = (() => {
     $("#fsName2").textContent = b.name;
     $("#fsScore1").textContent = a.score;
     $("#fsScore2").textContent = b.score;
+    $("#fsCorrect1").textContent = `✅ ${a.correct || 0} إجابة صحيحة`;
+    $("#fsCorrect2").textContent = `✅ ${b.correct || 0} إجابة صحيحة`;
 
     let winner;
     if (a.score > b.score) {
@@ -1063,6 +1183,7 @@ const Game = (() => {
       state.cats = snap.cats;
       Object.assign(state.settings, snap.settings || {});
       state.teamColors = snap.teamColors || state.teamColors;
+      state.goldenPlayed = !!snap.goldenPlayed;
       document.documentElement.style.setProperty("--team1", state.teamColors[0]);
       document.documentElement.style.setProperty("--team2", state.teamColors[1]);
       buildBoard();
@@ -1357,16 +1478,17 @@ const Game = (() => {
       if (e.key === "Escape") {
         if (state.current) closeQuestion();
         $$(".modal.active").forEach((m) => {
-          if (m.id !== "qModal") m.classList.remove("active");
+          if (m.id !== "qModal" && m.id !== "goldenModal") m.classList.remove("active");
         });
       }
       if (!state.current) return;
       if (e.key === " ") {
         e.preventDefault();
-        if (!$("#answerBox").classList.contains("show")) showAnswer();
+        if (!state.answerShown) showAnswer();
+        return;
       }
       // منح النقاط بالكيبورد فقط بعد عرض الإجابة
-      if (!$("#answerBox").classList.contains("show")) return;
+      if (!state.answerShown) return;
       if (e.key === "1") award(1);
       if (e.key === "2") award(2);
       if (e.key === "0") award(0);
@@ -1384,6 +1506,7 @@ const Game = (() => {
     toggleSound, toggleFullscreen, cycleTheme, setTheme, toggleLang,
     openProfile, closeProfile, openAuth, closeAuth, authTab, doLogin, doSignup, guest,
     openHelp, closeHelp, shareResult,
+    goldenShowQuestion, goldenReveal, goldenSetResult, goldenApply,
   };
 })();
 
