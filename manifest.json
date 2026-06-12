@@ -1,14 +1,14 @@
 {
-  "name": "جمعة — لعبة المسابقات",
-  "short_name": "جمعة",
+  "name": "لَمة — لعبة المسابقات",
+  "short_name": "لَمة",
   "description": "لعبة مسابقات عربية بين فريقين بالفئات والنقاط",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0c0f1a",
-  "theme_color": "#0c0f1a",
+  "background_color": "#0e0a14",
+  "theme_color": "#0e0a14",
   "icons": [
     {
       "src": "icon.svg",

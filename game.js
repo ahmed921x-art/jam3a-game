@@ -1,5 +1,5 @@
 /* ===========================================================
-   جمعة — منطق اللعبة الكامل (نسخة عالمية)
+   لَمة — منطق اللعبة الكامل (نسخة عالمية)
    حسابات + ملف شخصي + ثيمات + لغتان + إحصائيات + اللعبة
    =========================================================== */
 
@@ -7,14 +7,35 @@ const Game = (() => {
   const LS_SETTINGS = "sj_settings";
   const LS_THEME = "sj_theme";
   const LS_LANG = "sj_lang";
+  const LS_MODE = "sj_mode";
 
   const THEMES = ["royal", "emerald", "crimson", "ocean", "violet"];
 
+  // وسائل المساعدة (نمط سين جيم): بطاقة وصف في الشريط الجانبي ثم تفعيل
   const LIFELINES = [
-    { id: "double", label: "نقطتك ونص", icon: "✖️" },
-    { id: "steal", label: "جاوب واسرق", icon: "🥷" },
-    { id: "phone", label: "وقت إضافي", icon: "📞" },
+    {
+      id: "swap",
+      label: "تبديل السؤال",
+      icon: "🔄",
+      desc: "مو عاجبكم السؤال؟ بدّلوه بسؤال ثاني من نفس الفئة وبنفس النقاط",
+      start: "بدّل السؤال",
+    },
+    {
+      id: "phone",
+      label: "اتصال بصديق",
+      icon: "📞",
+      desc: "صديقك اللي يعرف كل شي هذا وقته. دق عليه",
+      start: "ابدأ",
+    },
+    {
+      id: "two",
+      label: "جاوب جوابين",
+      icon: "✌️",
+      desc: "مو متأكدين من الجواب؟ عطوا جوابين بدل جواب واحد — إذا أحدهم صح تنحسب لكم",
+      start: "فعّل",
+    },
   ];
+  const PHONE_SECONDS = 60;
 
   const TEAM_COLORS = ["#3aa0ff", "#ff5d73", "#34d399", "#a78bfa", "#f59e0b", "#ec4899"];
 
@@ -44,10 +65,8 @@ const Game = (() => {
     selectedCats: [],
     cats: [],
     current: null,
-    timer: { id: null, left: 0, paused: false, total: 60 },
-    multiplier: 1,
-    multiplierTeam: 0,
-    stealArmed: false,
+    timer: { id: null, elapsed: 0, paused: false }, // مؤقت تصاعدي (ستوب ووتش) مثل سين جيم
+    ll: null, // وسيلة المساعدة المفتوحة حالياً { team, li, countId, left }
     answerShown: false,
     goldenPlayed: false,
     golden: null,
@@ -71,6 +90,7 @@ const Game = (() => {
   function show(scr) {
     Object.values(screens).forEach((s) => s.classList.remove("active"));
     screens[scr].classList.add("active");
+    document.body.classList.toggle("in-game", scr === "board");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -187,6 +207,16 @@ const Game = (() => {
     const fresh = checkAchievements();
     if (fresh.length) toast(`🏅 إنجاز جديد: ${fresh[0].name}`);
   }
+  // الوضع الفاتح / الغامق (زر التبديل في هيدر اللعبة — مثل سين جيم)
+  function applyMode(m) {
+    document.body.dataset.mode = m === "light" ? "light" : "dark";
+    localStorage.setItem(LS_MODE, document.body.dataset.mode);
+  }
+  function toggleMode() {
+    applyMode(document.body.dataset.mode === "light" ? "dark" : "light");
+    Sound.click();
+  }
+
   function cycleTheme() {
     state.themeIndex = (state.themeIndex + 1) % THEMES.length;
     applyTheme();
@@ -202,14 +232,14 @@ const Game = (() => {
     Sound.select();
   }
   const THEME_NAMES = {
-    royal: "ملكي",
+    royal: "لَمة (الأساسي)",
     emerald: "زمردي",
     crimson: "قرمزي",
     ocean: "محيطي",
     violet: "بنفسجي",
   };
   const THEME_SWATCH = {
-    royal: "#e9b949",
+    royal: "#ff7a47",
     emerald: "#34d399",
     crimson: "#fb7185",
     ocean: "#38bdf8",
@@ -457,7 +487,9 @@ const Game = (() => {
       tile.innerHTML = `
         ${isCustom ? '<span class="custom-tag">خاص</span>' : ""}
         <span class="check">✓</span>
-        <span class="ic">${cat.icon || "📁"}</span>
+        <div class="cat-thumb">${
+          cat.img ? `<img src="${cat.img}" alt="" loading="lazy" />` : `<span class="ic">${cat.icon || "📁"}</span>`
+        }</div>
         <span class="nm">${cat.name}</span>
         <span class="cat-count">${cat.questions.length} سؤال</span>`;
       tile.tabIndex = 0;
@@ -531,15 +563,6 @@ const Game = (() => {
   }
 
   function bindSettings() {
-    $("#timeSeg").addEventListener("click", (e) => {
-      const b = e.target.closest("button");
-      if (!b) return;
-      $$("#timeSeg button").forEach((x) => x.classList.remove("on"));
-      b.classList.add("on");
-      state.settings.seconds = +b.dataset.v;
-      saveSettings();
-      Sound.click();
-    });
     $("#randSeg").addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
@@ -580,9 +603,6 @@ const Game = (() => {
   }
 
   function applySettingsToUI() {
-    $$("#timeSeg button").forEach((b) =>
-      b.classList.toggle("on", +b.dataset.v === state.settings.seconds)
-    );
     $$("#randSeg button").forEach((b) =>
       b.classList.toggle("on", (b.dataset.v === "1") === state.settings.random)
     );
@@ -633,7 +653,8 @@ const Game = (() => {
     const cats = allCats();
     state.cats = state.selectedCats.map((i) => {
       const c = cats[i];
-      return { name: c.name, icon: c.icon || "📁", questions: pickQuestions(c) };
+      // pool: كل أسئلة الفئة — يلزم وسيلة "تبديل السؤال"
+      return { name: c.name, icon: c.icon || "📁", img: c.img || "", questions: pickQuestions(c), pool: c.questions };
     });
 
     document.documentElement.style.setProperty("--team1", state.teamColors[0]);
@@ -655,16 +676,14 @@ const Game = (() => {
   // ====================================================
   function buildBoard() {
     const board = $("#board");
-    board.style.gridTemplateColumns = `repeat(${state.cats.length}, 1fr)`;
+    board.style.gridTemplateColumns = `repeat(${Math.min(3, state.cats.length)}, 1fr)`;
     board.innerHTML = "";
     state.cats.forEach((cat, ci) => {
-      const col = document.createElement("div");
-      col.className = "board-col";
-      const head = document.createElement("div");
-      head.className = "col-head";
-      head.innerHTML = `<span class="ic">${cat.icon}</span>${cat.name}`;
-      col.appendChild(head);
-      cat.questions.forEach((q, qi) => {
+      const unit = document.createElement("div");
+      unit.className = "cat-unit";
+
+      const makeCell = (qi) => {
+        const q = cat.questions[qi];
         const cell = document.createElement("div");
         cell.className = "cell" + (q.done ? " done" : "");
         cell.textContent = q.done ? "✓" : q.points;
@@ -683,60 +702,202 @@ const Game = (() => {
             openQuestion(ci, qi, cell);
           }
         });
-        col.appendChild(cell);
-      });
-      board.appendChild(col);
+        return cell;
+      };
+
+      // عمودان حول صورة الفئة: يمين أول سؤال من كل قيمة، يسار ثانيها
+      const makeCol = (idxs) => {
+        const col = document.createElement("div");
+        col.className = "unit-col";
+        idxs.forEach((qi) => {
+          if (cat.questions[qi]) col.appendChild(makeCell(qi));
+        });
+        return col;
+      };
+
+      const media = document.createElement("div");
+      media.className = "cat-media";
+      const [c1, c2] = colorFor(cat, ci);
+      media.style.setProperty("--c1", c1);
+      media.style.setProperty("--c2", c2);
+      media.innerHTML =
+        (cat.img
+          ? `<img src="${cat.img}" alt="" loading="lazy" />`
+          : `<span class="big-ic">${cat.icon || "📁"}</span>`) +
+        `<span class="cat-name">${cat.name}</span>`;
+
+      unit.appendChild(makeCol([0, 2, 4]));
+      unit.appendChild(media);
+      unit.appendChild(makeCol([1, 3, 5]));
+      board.appendChild(unit);
     });
     renderLifelines();
     updateProgress();
   }
 
   function renderLifelines() {
+    // أزرار دائرية (أيقونة فقط) — على اللوحة وداخل شاشة السؤال (نمط سين جيم)
     [1, 2].forEach((t) => {
-      const box = $(`#t${t}Lifelines`);
-      box.innerHTML = "";
-      state.teams[t - 1].lifelines.forEach((l, li) => {
-        const el = document.createElement("span");
-        el.className = "lifeline" + (l.used ? " used" : "");
-        el.textContent = `${l.icon} ${l.label}`;
-        el.addEventListener("click", () => useLifeline(t, li));
-        box.appendChild(el);
+      [$(`#t${t}Lifelines`), $(`#qT${t}Lifelines`)].forEach((box) => {
+        if (!box) return;
+        box.innerHTML = "";
+        state.teams[t - 1].lifelines.forEach((l, li) => {
+          const el = document.createElement("span");
+          el.className = "lifeline" + (l.used ? " used" : "");
+          el.textContent = l.icon;
+          el.title = l.label;
+          el.addEventListener("click", () => useLifeline(t, li));
+          box.appendChild(el);
+        });
       });
     });
   }
 
+  // ===== وسائل المساعدة: بطاقة جانبية بوصف وزر «ابدأ» (مثل سين جيم) =====
   function useLifeline(team, li) {
     const l = state.teams[team - 1].lifelines[li];
     if (l.used) return;
-    if (l.id === "phone") {
-      if (!state.current) return toast("استخدمها أثناء عرض السؤال");
-      state.timer.left += 30;
-      state.timer.total += 30;
-      paintTimer();
-      toast("📞 +30 ثانية");
-    }
-    if (l.id === "double") {
-      if (!state.current) return toast("استخدمها أثناء عرض السؤال");
-      state.multiplier = 1.5;
-      state.multiplierTeam = team;
-      toast(`✖️ نقاط هذا السؤال ×1.5 لـ ${state.teams[team - 1].name}`);
-    }
-    if (l.id === "steal") {
-      if (!state.current) return toast("استخدمها أثناء عرض السؤال");
-      state.stealArmed = true;
-      $("#stealNote").classList.add("show");
-      toast("🥷 وضع السرقة مفعّل");
-    }
+    if (!state.current) return toast("تستخدم أثناء عرض السؤال");
+    if (state.current.tie) return toast("لا وسائل مساعدة في الشوط الفاصل");
+    if (state.ll) return;
+    const def = LIFELINES.find((d) => d.id === l.id) || l;
+    state.ll = { team, li, countId: null, left: 0 };
+    $("#llTitle").textContent = l.label;
+    $("#llDesc").textContent = def.desc || "";
+    $("#llIcon").textContent = l.icon;
+    $("#llIcon").hidden = false;
+    $("#llRing").hidden = true;
+    const startBtn = $("#llStartBtn");
+    startBtn.textContent = def.start || "ابدأ";
+    startBtn.hidden = false;
+    $("#llCancelBtn").textContent = "رجوع";
+    $("#qSideTeams").hidden = true;
+    $("#llCard").hidden = false;
+    Sound.open();
+  }
+
+  function consumeLifeline() {
+    if (!state.ll) return;
+    const { team, li } = state.ll;
+    state.teams[team - 1].lifelines[li].used = true;
     Sound.lifeline();
-    l.used = true;
     renderLifelines();
     saveGame();
+  }
+
+  function closeLifelineCard() {
+    if (state.ll && state.ll.countId) clearInterval(state.ll.countId);
+    state.ll = null;
+    const card = $("#llCard");
+    if (card) {
+      card.hidden = true;
+      $("#qSideTeams").hidden = false;
+    }
+  }
+
+  function lifelineStart() {
+    if (!state.ll || !state.current) return;
+    const { team, li } = state.ll;
+    const l = state.teams[team - 1].lifelines[li];
+    if (l.id === "swap") {
+      if (swapQuestion()) {
+        consumeLifeline();
+        closeLifelineCard();
+      }
+      return;
+    }
+    if (l.id === "two") {
+      const note = $("#qNote");
+      note.textContent = `✌️ ${state.teams[team - 1].name} يحق له جوابين على هذا السؤال`;
+      note.classList.add("show");
+      consumeLifeline();
+      closeLifelineCard();
+      toast("✌️ جاوب جوابين مفعّلة");
+      return;
+    }
+    if (l.id === "phone") startPhoneCall();
+  }
+
+  function lifelineCancel() {
+    if (!state.ll) return;
+    if (state.ll.countId) {
+      // إنهاء المكالمة مبكراً (انحسبت من لحظة البدء)
+      endPhoneCall();
+      return;
+    }
+    closeLifelineCard();
+    Sound.click();
+  }
+
+  function startPhoneCall() {
+    state.ll.left = PHONE_SECONDS;
+    $("#llDesc").textContent = "عندك دقيقة وحدة تقدر تتصل فيها على شخص ممكن يكون عارف الإجابة";
+    $("#llIcon").hidden = true;
+    $("#llRing").hidden = false;
+    $("#llStartBtn").hidden = true;
+    $("#llCancelBtn").textContent = "إنهاء المكالمة";
+    // يتوقف مؤقت السؤال أثناء المكالمة
+    state.timer.paused = true;
+    $("#pauseBtn").textContent = "▶";
+    paintPhoneRing();
+    consumeLifeline();
+    state.ll.countId = setInterval(() => {
+      state.ll.left--;
+      paintPhoneRing();
+      if (state.ll.left <= 0) endPhoneCall();
+    }, 1000);
+  }
+
+  function paintPhoneRing() {
+    const left = Math.max(0, state.ll.left);
+    $("#llRingTime").textContent = fmtTime(left);
+    const fg = $("#llRingFg");
+    const C = 2 * Math.PI * 54;
+    fg.style.strokeDasharray = C;
+    fg.style.strokeDashoffset = C * (1 - left / PHONE_SECONDS);
+  }
+
+  function endPhoneCall() {
+    closeLifelineCard();
+    Sound.timeout();
+    toast("📞 انتهت المكالمة");
+    // استئناف مؤقت السؤال إن كنا ما زلنا على شاشة السؤال
+    if (state.current && !state.answerShown) {
+      state.timer.paused = false;
+      $("#pauseBtn").textContent = "⏸";
+    }
+  }
+
+  function swapQuestion() {
+    const cur = state.current;
+    const cat = state.cats[cur.ci];
+    const onBoard = new Set(cat.questions.map((q) => q.q));
+    const pool = (cat.pool || []).filter((p) => p.points === cur.points && !onBoard.has(p.q));
+    if (!pool.length) {
+      toast("ما فيه سؤال بديل لهذه الفئة");
+      return false;
+    }
+    const q = { ...pool[(Math.random() * pool.length) | 0], points: cur.points, done: false };
+    cat.questions[cur.qi] = q;
+    $("#qText").textContent = q.q;
+    $("#answerText").textContent = q.a;
+    setImg("qImg", q.img);
+    setImg("answerImg", q.aImg);
+    state.timer.elapsed = 0;
+    paintTimer();
+    saveGame();
+    toast("🔄 تم تبديل السؤال");
+    return true;
   }
 
   function setTurn(t) {
     state.turn = t;
     $("#teamCard1").classList.toggle("active", t === 1);
     $("#teamCard2").classList.toggle("active", t === 2);
+    const label = `دور فريق : ${state.teams[t - 1].name}`;
+    $("#bTurnPill").textContent = label;
+    if (state.current && !state.current.tie) $("#qTurnPill").textContent = label;
+    [1, 2].forEach((x) => $(`#qSideT${x}`).classList.toggle("turn", t === x));
   }
   function toggleTurn() {
     setTurn(state.turn === 1 ? 2 : 1);
@@ -778,71 +939,100 @@ const Game = (() => {
   }
 
   function updateProgress() {
+    const el = $("#progressMini");
+    if (!el) return;
     const total = state.cats.reduce((s, c) => s + c.questions.length, 0);
     const done = state.cats.reduce((s, c) => s + c.questions.filter((q) => q.done).length, 0);
-    $("#progressMini").textContent = `${done} / ${total}`;
+    el.textContent = `${done} / ${total}`;
   }
 
   // ====================================================
   //  السؤال
   // ====================================================
+  // صورة اختيارية للسؤال أو الإجابة (حقلا img / aImg في بيانات السؤال)
+  function setImg(id, src) {
+    const el = $("#" + id);
+    if (!el) return;
+    if (src) {
+      el.src = src;
+      el.classList.add("show");
+    } else {
+      el.removeAttribute("src");
+      el.classList.remove("show");
+    }
+  }
+
+  function askClose() {
+    // «الرجوع للوحة» — يغلق السؤال بدون نقاط (الخلية تبقى متاحة)
+    if (state.current) closeQuestion();
+  }
+
+  function setView(v) {
+    $("#qFrame").dataset.view = v;
+  }
+
   function openQuestion(ci, qi, cell) {
     const q = state.cats[ci].questions[qi];
     if (q.done) return;
     Sound.unlock();
     state.current = { ci, qi, cell, points: q.points };
-    state.multiplier = 1;
-    state.multiplierTeam = 0;
-    state.stealArmed = false;
     state.answerShown = false;
 
     $("#qCat").textContent = state.cats[ci].name;
-    $("#qPoints").textContent = q.points;
+    $("#qPoints").textContent = `${q.points} نقطة`;
     $("#qText").textContent = q.q;
     $("#answerText").textContent = q.a;
-    $("#answerBox").classList.remove("show");
-    $("#awardRow").classList.remove("show");
-    $("#stealNote").classList.remove("show");
-    $("#showAnswerBtn").style.display = "";
-    $("#pauseBtn").style.display = "";
-    $("#pauseBtn").textContent = "⏸️ إيقاف";
-    $("#awardT1").textContent = `${state.teams[0].name} ✓`;
-    $("#awardT2").textContent = `${state.teams[1].name} ✓`;
+    setImg("qImg", q.img);
+    setImg("answerImg", q.aImg);
+    const note = $("#qNote");
+    note.textContent = "";
+    note.classList.remove("show");
+    $("#awardT1").textContent = state.teams[0].name;
+    $("#awardT2").textContent = state.teams[1].name;
+    setView("q");
+    closeLifelineCard();
+    syncQuestionSide(`دور فريق : ${state.teams[state.turn - 1].name}`);
 
     $("#qModal").classList.add("active");
     Sound.open();
     startTimer();
   }
 
+  // مزامنة الشريط الجانبي لشاشة السؤال (أسماء، نقاط، دور، وسائل)
+  function syncQuestionSide(turnLabel) {
+    $("#qTurnPill").textContent = turnLabel;
+    [1, 2].forEach((t) => {
+      $(`#qT${t}Name`).textContent = state.teams[t - 1].name;
+      $(`#qT${t}Score`).textContent = state.teams[t - 1].score;
+      $(`#qSideT${t}`).classList.toggle("turn", state.turn === t);
+    });
+    renderLifelines();
+  }
+
+  // ===== مؤقت تصاعدي (00:00 ↑) مع إيقاف وتصفير — مثل سين جيم =====
+  function fmtTime(s) {
+    return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  }
+  function restartTimer() {
+    if (!state.current) return;
+    state.timer.elapsed = 0;
+    paintTimer();
+    Sound.click();
+  }
   function startTimer() {
     stopTimer();
-    state.timer.total = state.settings.seconds;
-    state.timer.left = state.settings.seconds;
+    state.timer.elapsed = 0;
     state.timer.paused = false;
+    $("#pauseBtn").textContent = "⏸";
     paintTimer();
     state.timer.id = setInterval(() => {
       if (state.timer.paused) return;
-      state.timer.left--;
+      state.timer.elapsed++;
       paintTimer();
-      if (state.timer.left <= 5 && state.timer.left > 0) Sound.tickLow();
-      if (state.timer.left <= 0) {
-        stopTimer();
-        Sound.timeout();
-        toast("⏰ انتهى الوقت!");
-        // عرض الإجابة تلقائياً عند انتهاء الوقت
-        if (!state.answerShown) showAnswer();
-      }
     }, 1000);
   }
   function paintTimer() {
-    const el = $("#timer");
-    const left = Math.max(0, state.timer.left);
-    el.textContent = left;
-    const low = left <= 10;
-    el.classList.toggle("low", low);
-    const bar = $("#timerBar");
-    bar.style.width = (left / state.timer.total) * 100 + "%";
-    bar.classList.toggle("low", low);
+    $("#timer").textContent = fmtTime(state.timer.elapsed);
   }
   function stopTimer() {
     if (state.timer.id) clearInterval(state.timer.id);
@@ -851,18 +1041,35 @@ const Game = (() => {
   function togglePause() {
     if (!state.current) return;
     state.timer.paused = !state.timer.paused;
-    $("#pauseBtn").textContent = state.timer.paused ? "▶️ متابعة" : "⏸️ إيقاف";
+    $("#pauseBtn").textContent = state.timer.paused ? "▶" : "⏸";
     Sound.click();
   }
 
+  // ===== تنقّل شاشات السؤال → الإجابة → الحكم =====
   function showAnswer() {
+    if (!state.current) return;
     state.answerShown = true;
     state.timer.paused = true;
-    $("#answerBox").classList.add("show");
-    $("#showAnswerBtn").style.display = "none";
-    $("#pauseBtn").style.display = "none";
-    $("#awardRow").classList.add("show");
+    $("#pauseBtn").textContent = "▶";
+    setView("a");
     Sound.select();
+  }
+  function backToQuestion() {
+    if (!state.current) return;
+    setView("q");
+    state.timer.paused = false;
+    $("#pauseBtn").textContent = "⏸";
+    Sound.click();
+  }
+  function openJudge() {
+    if (!state.current) return;
+    setView("j");
+    Sound.open();
+  }
+  function backToAnswer() {
+    if (!state.current) return;
+    setView("a");
+    Sound.click();
   }
 
   function award(team) {
@@ -888,9 +1095,7 @@ const Game = (() => {
 
     const { ci, qi, cell, points } = state.current;
     if (team !== 0) {
-      let mult = state.multiplier > 1 && state.multiplierTeam === team ? state.multiplier : 1;
-      const gained = Math.round(points * mult);
-      state.teams[team - 1].score += gained;
+      state.teams[team - 1].score += points;
       state.teams[team - 1].correct = (state.teams[team - 1].correct || 0) + 1;
       Sound.correct();
       const r = cell.getBoundingClientRect();
@@ -915,9 +1120,8 @@ const Game = (() => {
 
   function closeQuestion() {
     stopTimer();
+    closeLifelineCard();
     state.current = null;
-    state.multiplier = 1;
-    state.stealArmed = false;
     state.answerShown = false;
     $("#qModal").classList.remove("active");
   }
@@ -929,6 +1133,7 @@ const Game = (() => {
   //  النتيجة + الإحصائيات
   // ====================================================
   function finish() {
+    if (state.current) closeQuestion();
     stopTimer();
     $("#qModal").classList.remove("active");
     // الجولة الذهبية قبل إعلان النتيجة (إن كانت مفعّلة)
@@ -957,7 +1162,7 @@ const Game = (() => {
   function openGolden() {
     const pool = goldenPool();
     const q = pool[(Math.random() * pool.length) | 0];
-    state.golden = { q: q.q, a: q.a, wagers: [0, 0], results: [null, null], revealed: false };
+    state.golden = { q: q.q, a: q.a, img: q.img || "", aImg: q.aImg || "", wagers: [0, 0], results: [null, null], revealed: false };
 
     [1, 2].forEach((t) => {
       const team = state.teams[t - 1];
@@ -986,6 +1191,8 @@ const Game = (() => {
     });
     $("#goldQText").textContent = state.golden.q;
     $("#goldAnswerText").textContent = state.golden.a;
+    setImg("goldQImg", state.golden.img);
+    setImg("goldAnswerImg", state.golden.aImg);
     $("#goldStageWager").style.display = "none";
     $("#goldStageQ").style.display = "";
     Sound.select();
@@ -1041,16 +1248,19 @@ const Game = (() => {
     state.answerShown = false;
 
     $("#qCat").textContent = "⚡ شوط فاصل حاسم";
-    $("#qPoints").textContent = "الفوز";
+    $("#qPoints").textContent = "نقطة الفوز";
     $("#qText").textContent = q.q;
     $("#answerText").textContent = q.a;
-    $("#answerBox").classList.remove("show");
-    $("#awardRow").classList.remove("show");
-    $("#stealNote").classList.remove("show");
-    $("#showAnswerBtn").style.display = "";
-    $("#pauseBtn").style.display = "";
-    $("#awardT1").textContent = `${state.teams[0].name} ✓`;
-    $("#awardT2").textContent = `${state.teams[1].name} ✓`;
+    setImg("qImg", q.img);
+    setImg("answerImg", q.aImg);
+    const note = $("#qNote");
+    note.textContent = "";
+    note.classList.remove("show");
+    $("#awardT1").textContent = state.teams[0].name;
+    $("#awardT2").textContent = state.teams[1].name;
+    setView("q");
+    closeLifelineCard();
+    syncQuestionSide("⚡ شوط فاصل حاسم");
 
     $("#qModal").classList.add("active");
     toast("🤝 تعادل! شوط فاصل يحسم الفوز ⚡");
@@ -1122,6 +1332,7 @@ const Game = (() => {
   }
 
   function home() {
+    if (state.current) closeQuestion();
     if (state.cats.length && !allDone()) saveGame();
     goLanding();
   }
@@ -1260,7 +1471,7 @@ const Game = (() => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "jam3a-categories.json";
+    a.download = "lamma-categories.json";
     a.click();
     URL.revokeObjectURL(url);
     toast("⬇️ تم التصدير");
@@ -1314,7 +1525,7 @@ const Game = (() => {
     cv.width = W;
     cv.height = H;
     const c = cv.getContext("2d");
-    const sw = THEME_SWATCH[THEMES[state.themeIndex]] || "#e9b949";
+    const sw = THEME_SWATCH[THEMES[state.themeIndex]] || "#ff7a47";
 
     // خلفية
     const bg = c.createLinearGradient(0, 0, W, H);
@@ -1331,7 +1542,7 @@ const Game = (() => {
     c.textAlign = "center";
     c.fillStyle = sw;
     c.font = "900 90px Tajawal, Arial";
-    c.fillText("جمعة", W / 2, 200);
+    c.fillText("لَمة", W / 2, 200);
 
     c.fillStyle = "#aeb4c7";
     c.font = "700 40px Tajawal, Arial";
@@ -1339,7 +1550,7 @@ const Game = (() => {
 
     // الفائز
     let winLine = a.score === b.score ? "🤝 تعادل" : "🏆 " + (a.score > b.score ? a.name : b.name);
-    c.fillStyle = "#f3d27a";
+    c.fillStyle = "#ffb46b";
     c.font = "900 70px Tajawal, Arial";
     c.fillText(winLine, W / 2, 430);
 
@@ -1351,7 +1562,7 @@ const Game = (() => {
       c.fillStyle = color;
       c.font = "800 50px Tajawal, Arial";
       c.fillText(name, W / 2, y + 65);
-      c.fillStyle = "#f3d27a";
+      c.fillStyle = "#ffb46b";
       c.font = "900 80px Tajawal, Arial";
       c.fillText(score, W / 2, y + 135);
     }
@@ -1360,13 +1571,13 @@ const Game = (() => {
 
     c.fillStyle = "#8a90a8";
     c.font = "700 34px Tajawal, Arial";
-    c.fillText("العب الآن • جمعة", W / 2, 980);
+    c.fillText("العب الآن • لَمة", W / 2, 980);
 
     cv.toBlob((blob) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "jam3a-result.png";
+      link.download = "lamma-result.png";
       link.click();
       URL.revokeObjectURL(url);
       toast("📸 تم حفظ صورة النتيجة");
@@ -1399,6 +1610,7 @@ const Game = (() => {
     loadSettings();
     state.themeIndex = +(localStorage.getItem(LS_THEME) || 0) % THEMES.length;
     applyTheme();
+    applyMode(localStorage.getItem(LS_MODE) || "dark");
     applyLang(localStorage.getItem(LS_LANG) || "ar");
 
     FX.starfield("starfield");
@@ -1414,11 +1626,6 @@ const Game = (() => {
 
     $("#startBtn").addEventListener("click", start);
 
-    $("#qModal").addEventListener("click", (e) => {
-      if (e.target.id === "qModal" && state.current) {
-        if (confirm("إغلاق السؤال بدون منح نقاط؟")) closeQuestion();
-      }
-    });
     ["editorModal", "authModal", "profileModal", "helpModal"].forEach((id) => {
       $("#" + id).addEventListener("click", (e) => {
         if (e.target.id === id) $("#" + id).classList.remove("active");
@@ -1460,9 +1667,10 @@ const Game = (() => {
     init, start, adjust, toggleTurn, togglePause, showAnswer, award, finish,
     playAgain, home, resume, discardSave, goLanding, playClick,
     openEditor, closeEditor, edAddQuestion, edSave, edClear, exportData, importData,
-    toggleSound, toggleFullscreen, cycleTheme, setTheme, toggleLang,
+    toggleSound, toggleFullscreen, cycleTheme, setTheme, toggleLang, toggleMode,
     openProfile, closeProfile, openAuth, closeAuth, googleLogin, guest,
-    openHelp, closeHelp, shareResult,
+    openHelp, closeHelp, shareResult, askClose, restartTimer,
+    backToQuestion, openJudge, backToAnswer, lifelineStart, lifelineCancel,
     goldenShowQuestion, goldenReveal, goldenSetResult, goldenApply,
   };
 })();

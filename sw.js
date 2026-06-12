@@ -1,5 +1,5 @@
-/* جمعة — Service Worker للعمل بدون اتصال */
-const CACHE = "jam3a-v11";
+/* لَمة — Service Worker للعمل بدون اتصال */
+const CACHE = "jam3a-v14";
 const ASSETS = [
   "./",
   "./index.html",

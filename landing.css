@@ -1,5 +1,5 @@
 /* ============================================================
-   جمعة — تصميم النسخة العالمية
+   لَمة — تصميم النسخة العالمية
    أورورا + صفحة الهبوط + الحسابات + الملف الشخصي + الثيمات
    ============================================================ */
 
@@ -51,7 +51,7 @@
   height: 40px;
   padding: 0 12px 0 6px;
   border-radius: 24px;
-  border: 1px solid rgba(233, 185, 73, 0.4);
+  border: 1px solid rgba(255, 122, 71, 0.4);
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   color: var(--text);
   font-family: inherit;
@@ -89,8 +89,8 @@
   font-size: 13px;
   font-weight: 800;
   color: var(--gold-soft);
-  background: rgba(233, 185, 73, 0.12);
-  border: 1px solid rgba(233, 185, 73, 0.4);
+  background: rgba(255, 122, 71, 0.12);
+  border: 1px solid rgba(255, 122, 71, 0.4);
   padding: 6px 16px;
   border-radius: 30px;
   margin-bottom: 14px;
@@ -185,7 +185,7 @@
   align-items: center;
   gap: 8px;
   background: linear-gradient(180deg, var(--panel), var(--bg-2));
-  border: 1px solid rgba(233, 185, 73, 0.25);
+  border: 1px solid rgba(255, 122, 71, 0.25);
   border-radius: 30px;
   padding: 10px 18px;
   font-weight: 700;
@@ -220,7 +220,7 @@
 }
 .feature:hover {
   transform: translateY(-5px);
-  border-color: rgba(233, 185, 73, 0.5);
+  border-color: rgba(255, 122, 71, 0.5);
 }
 .feature .fic {
   font-size: 42px;
@@ -409,7 +409,7 @@
 }
 .avatar-opt.on {
   border-color: var(--gold);
-  background: rgba(233, 185, 73, 0.15);
+  background: rgba(255, 122, 71, 0.15);
 }
 
 .profile-avatar {
@@ -422,7 +422,7 @@
   border: 2px solid var(--gold);
   border-radius: 50%;
   font-size: 44px;
-  box-shadow: 0 0 28px rgba(233, 185, 73, 0.35);
+  box-shadow: 0 0 28px rgba(255, 122, 71, 0.35);
 }
 .profile-name {
   font-size: 24px;
@@ -624,8 +624,8 @@ input:focus-visible {
   opacity: 1;
   filter: none;
   color: var(--gold-soft);
-  border-color: rgba(233, 185, 73, 0.5);
-  background: rgba(233, 185, 73, 0.1);
+  border-color: rgba(255, 122, 71, 0.5);
+  background: rgba(255, 122, 71, 0.1);
 }
 .badge .b-ic {
   font-size: 16px;

@@ -1,5 +1,5 @@
 /* ===========================================================
-   جمعة — محرك المؤثرات البصرية
+   لَمة — محرك المؤثرات البصرية
    خلفية نجوم متحركة + كونفيتي + ألعاب نارية (Canvas، بدون مكتبات)
    =========================================================== */
 
@@ -42,10 +42,10 @@ const FX = (() => {
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r * s.z, 0, Math.PI * 2);
         ctx.fillStyle = glow
-          ? `rgba(243, 210, 122, ${alpha})`
+          ? `rgba(255, 180, 107, ${alpha})`
           : `rgba(200, 215, 255, ${alpha * 0.8})`;
         ctx.shadowBlur = glow ? 8 : 0;
-        ctx.shadowColor = "rgba(243,210,122,0.8)";
+        ctx.shadowColor = "rgba(255,180,107,0.8)";
         ctx.fill();
       }
       ctx.shadowBlur = 0;
@@ -69,7 +69,7 @@ const FX = (() => {
     return cv;
   }
 
-  const COLORS = ["#e9b949", "#f3d27a", "#3aa0ff", "#ff5d73", "#34d399", "#ffffff", "#a78bfa"];
+  const COLORS = ["#ff7a47", "#ffb46b", "#3aa0ff", "#ff5d73", "#34d399", "#ffffff", "#a78bfa"];
 
   function confettiBurst(x, y, amount, power = 1) {
     const cv = makeOverlay();

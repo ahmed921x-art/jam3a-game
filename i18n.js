@@ -1,5 +1,5 @@
 /* ===========================================================
-   جمعة — نظام اللغتين (عربي / إنجليزي)
+   لَمة — نظام اللغتين (عربي / إنجليزي)
    =========================================================== */
 
 const I18N = (() => {
@@ -10,7 +10,7 @@ const I18N = (() => {
       hero_sub: "اختر فئاتك، اجمع فريقك، وابدأ معركة المعلومات بأجواء احترافية.",
       play_now: "ابدأ اللعب الآن 🚀",
       how_play: "كيف تلعب؟",
-      feat_title: "ليش جمعة؟",
+      feat_title: "ليش لَمة؟",
       f1_t: "فئات لا تنتهي",
       f1_d: "عشرات الفئات وأسئلة عشوائية تتجدد كل لعبة.",
       f2_t: "محرر خاص",
@@ -62,7 +62,7 @@ const I18N = (() => {
       hero_sub: "Pick your categories, gather your team, and start an epic battle of knowledge.",
       play_now: "Play Now 🚀",
       how_play: "How to play?",
-      feat_title: "Why Jumaa?",
+      feat_title: "Why Lamma?",
       f1_t: "Endless Categories",
       f1_d: "Dozens of categories with fresh random questions every game.",
       f2_t: "Custom Editor",

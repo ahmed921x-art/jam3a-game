@@ -1,20 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff7e0"/>
-      <stop offset="0.5" stop-color="#f3d27a"/>
-      <stop offset="1" stop-color="#8a6d2a"/>
+    <linearGradient id="ember" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffa03d"/>
+      <stop offset="0.52" stop-color="#ff5e3a"/>
+      <stop offset="1" stop-color="#e8456b"/>
     </linearGradient>
-    <radialGradient id="bg" cx="50%" cy="35%" r="75%">
-      <stop offset="0" stop-color="#1c2540"/>
-      <stop offset="1" stop-color="#0c0f1a"/>
+    <radialGradient id="hl" cx="28%" cy="14%" r="85%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.3"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
     <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.4"/>
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#601226" flood-opacity="0.45"/>
     </filter>
   </defs>
-  <rect width="512" height="512" rx="115" fill="url(#bg)"/>
-  <rect x="26" y="26" width="460" height="460" rx="96" fill="none" stroke="url(#g)" stroke-width="7" opacity="0.55"/>
-  <text x="256" y="338" font-family="Tajawal, Arial, sans-serif" font-size="225"
-        font-weight="900" text-anchor="middle" fill="url(#g)" filter="url(#sh)">جمعة</text>
+  <rect width="512" height="512" rx="115" fill="url(#ember)"/>
+  <rect width="512" height="512" rx="115" fill="url(#hl)"/>
+  <rect x="22" y="22" width="468" height="468" rx="100" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="6"/>
+  <path d="M404 78 l12 30 30 12 -30 12 -12 30 -12 -30 -30 -12 30 -12 z" fill="#fff8ef" opacity="0.95"/>
+  <path d="M118 372 l7 18 18 7 -18 7 -7 18 -7 -18 -18 -7 18 -7 z" fill="#fff8ef" opacity="0.7"/>
+  <text x="256" y="338" font-family="Tajawal, Arial, sans-serif" font-size="215"
+        font-weight="900" text-anchor="middle" fill="#fff8ef" filter="url(#sh)">لَمة</text>
 </svg>

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-"جمعة" (jam3a) — Arabic RTL two-team trivia party game (host-judged, like seenjeem). Fully static site: vanilla HTML/CSS/JS, no build step, no dependencies, no backend. Deployed via GitHub Pages from `main` (https://ahmed921x-art.github.io/jam3a-game/). Installable PWA with offline support.
+"لَمة" (Lamma, formerly جمعة/jam3a — repo and Firebase ids keep the jam3a name) — Arabic RTL two-team trivia party game (host-judged, like seenjeem). Fully static site: vanilla HTML/CSS/JS, no build step, no dependencies, no backend. Deployed via GitHub Pages from `main` (https://ahmed921x-art.github.io/jam3a-game/). Installable PWA with offline support.
 
 ## Commands
 
@@ -30,7 +30,7 @@ questions.js → questions-extra.js → questions-kuwait.js → questions-pack2.
 → i18n.js → auth.js → sounds.js → effects.js → game.js
 ```
 
-- **`questions.js`** declares `const CATEGORIES = [...]` (the base packs). The other three question files **extend it via `CATEGORIES.push(...)`**, so they must load after it and before `game.js`. Each category: `{ id, name, icon, questions: [{ points: 200|400|600, q, a }] }` with **at least 2 questions per point tier** (the game picks 2 per tier per board). Run the validation one-liner above after touching question files; also watch for duplicate questions across categories (same question in two categories can appear twice in one game).
+- **`questions.js`** declares `const CATEGORIES = [...]` (the base packs). The other three question files **extend it via `CATEGORIES.push(...)`**, so they must load after it and before `game.js`. Each category: `{ id, name, icon, img?, questions: [{ points: 200|400|600, q, a, img?, aImg? }] }` with **at least 2 questions per point tier** (the game picks 2 per tier per board). `img`/`aImg` are optional image URLs (category card, question image, answer image) — rendered when present, icon/text-only otherwise. Run the validation one-liner above after touching question files; also watch for duplicate questions across categories (same question in two categories can appear twice in one game).
 - **`game.js`** — single `Game` IIFE holding all game state (`state` object) and screen logic. Screens are `<section class="screen">` elements toggled with `.active`; modals are `.modal` divs toggled with `.active`. HTML calls into it via `onclick="Game.xxx()"`, so any new handler must be exported in the `return {...}` block at the bottom. `state.answerShown` is the single source of truth for whether the current answer is revealed (do not re-check DOM classes).
 - **`auth.js`** — Firebase Auth (Google sign-in + guest mode) behind the original synchronous surface (`Auth.current()`, `Auth.key()`, `Auth.onChange()`). Firebase project: `jam3a-game` (config in `firebase-config.js`, compat SDK from CDN — no build step). Per-user storage keys come from `Auth.key(base)` → `sj_u_<uid>_<base>`; game.js `uWrite` writes localStorage first then `Auth.cloudSet()` debounce-syncs stats/history/custom/ach to Firestore `users/{uid}` (guest = local only). On login, cloud data wins; missing fields are uploaded from local. Security rules in `firestore.rules` (deploy: `firebase deploy --only firestore:rules`).
 - **`i18n.js`** — `I18N` dictionary (ar/en). Static UI text uses `data-i18n` attributes; dynamic strings built in game.js are Arabic-only. New static labels need keys in **both** languages.
