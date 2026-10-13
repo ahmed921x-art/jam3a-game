@@ -351,7 +351,18 @@ const Game = (() => {
     $("#authErr").textContent = "";
     const r = await Auth.googleLogin();
     if (!r.ok) {
-      $("#authErr").textContent = "تعذّر تسجيل الدخول — حاول مرة أخرى";
+      // رسالة واضحة حسب رمز Firebase بدل رسالة عامة
+      const code = String(r.error || "");
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
+      const msg =
+        code === "auth/configuration-not-found" || code === "auth/operation-not-allowed"
+          ? loc("تسجيل الدخول بحساب Google غير مفعّل حالياً. العب كضيف وستُحفظ نتائجك على هذا الجهاز.", "Google sign-in isn't enabled yet. Play as a guest; your progress stays on this device.")
+          : code === "auth/unauthorized-domain"
+          ? loc("هذا الرابط غير مسموح له بتسجيل الدخول. افتح اللعبة من رابطها الرسمي.", "Sign-in isn't allowed from this address. Open the game from its official link.")
+          : code === "auth/network-request-failed"
+          ? loc("لا يوجد اتصال بالإنترنت. تحقّق من الاتصال وحاول مرة أخرى.", "No internet connection. Check it and try again.")
+          : loc("تعذّر تسجيل الدخول. حاول مرة أخرى.", "Couldn't sign in. Please try again.");
+      $("#authErr").textContent = msg;
       Sound.wrong();
       return;
     }

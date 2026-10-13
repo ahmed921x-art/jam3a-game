@@ -107,8 +107,12 @@ const Auth = (() => {
     } catch (e) {
       // بعض المتصفحات/الجوالات تمنع النوافذ المنبثقة → إعادة توجيه
       if (e && (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment")) {
-        await FB.auth.signInWithRedirect(provider);
-        return { ok: true };
+        try {
+          await FB.auth.signInWithRedirect(provider);
+          return { ok: true };
+        } catch (e2) {
+          return { ok: false, error: e2 && e2.code ? e2.code : "auth/unknown" };
+        }
       }
       return { ok: false, error: e && e.code ? e.code : "تعذّر تسجيل الدخول" };
     }
