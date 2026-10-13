@@ -1,20 +1,19 @@
 {
-  "name": "لَمة — لعبة المسابقات",
-  "short_name": "لَمة",
-  "description": "لعبة مسابقات عربية بين فريقين بالفئات والنقاط",
+  "name": "بايو — مسابقة علمية بين فريقين",
+  "short_name": "بايو",
+  "description": "لعبة مسابقات جماعية بين فريقين بأسئلة في الأحياء والعلوم والمعلومات العامة.",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0e0a14",
-  "theme_color": "#0e0a14",
+  "background_color": "#0f1013",
+  "theme_color": "#0f1013",
+  "categories": ["games", "education", "entertainment"],
   "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

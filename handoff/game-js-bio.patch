@@ -1,0 +1,167 @@
+diff --git a/game.js b/game.js
+index b070251..e65d996 100644
+--- a/game.js
++++ b/game.js
+@@ -1,5 +1,5 @@
+ /* ===========================================================
+-   لَمة — منطق اللعبة الكامل (نسخة عالمية)
++   بايو (BIO) — منطق اللعبة الكامل
+    حسابات + ملف شخصي + ثيمات + لغتان + إحصائيات + اللعبة
+    =========================================================== */
+ 
+@@ -37,7 +37,7 @@ const Game = (() => {
+   ];
+   const PHONE_SECONDS = 60;
+ 
+-  const TEAM_COLORS = ["#3aa0ff", "#ff5d73", "#34d399", "#a78bfa", "#f59e0b", "#ec4899"];
++  const TEAM_COLORS = ["#9fe0ec", "#e8949d", "#c3e813", "#e4a6f7", "#f9e09b", "#ffb36b"];
+ 
+   // الإنجازات: شرط لكل إنجاز يعتمد على الإحصائيات
+   const ACHIEVEMENTS = [
+@@ -72,7 +72,7 @@ const Game = (() => {
+     golden: null,
+     settings: { seconds: 60, random: true, sound: true, golden: false },
+     themeIndex: 0,
+-    teamColors: ["#3aa0ff", "#ff5d73"],
++    teamColors: ["#9fe0ec", "#e8949d"],
+   };
+ 
+   let customCats = [];
+@@ -231,19 +231,14 @@ const Game = (() => {
+     recordTheme();
+     Sound.select();
+   }
+-  const THEME_NAMES = {
+-    royal: "لَمة (الأساسي)",
+-    emerald: "زمردي",
+-    crimson: "قرمزي",
+-    ocean: "محيطي",
+-    violet: "بنفسجي",
+-  };
++  // الأسماء المعروضة من I18N (theme_*) — المفاتيح الداخلية ثابتة حفاظاً على الإعدادات المحفوظة
++  const THEME_NAMES = new Proxy({}, { get: (_, th) => I18N.t("theme_" + String(th)) });
+   const THEME_SWATCH = {
+-    royal: "#ff7a47",
+-    emerald: "#34d399",
+-    crimson: "#fb7185",
+-    ocean: "#38bdf8",
+-    violet: "#a78bfa",
++    royal: "#c3e813",
++    emerald: "#f9e09b",
++    crimson: "#e8949d",
++    ocean: "#9fe0ec",
++    violet: "#e4a6f7",
+   };
+   function buildThemePicker() {
+     const box = $("#themePicker");
+@@ -742,10 +737,13 @@ const Game = (() => {
+         if (!box) return;
+         box.innerHTML = "";
+         state.teams[t - 1].lifelines.forEach((l, li) => {
+-          const el = document.createElement("span");
++          const el = document.createElement("button");
++          el.type = "button";
+           el.className = "lifeline" + (l.used ? " used" : "");
+           el.textContent = l.icon;
+           el.title = l.label;
++          el.setAttribute("aria-label", `${l.label} — ${state.teams[t - 1].name}`);
++          el.disabled = !!l.used;
+           el.addEventListener("click", () => useLifeline(t, li));
+           box.appendChild(el);
+         });
+@@ -1471,7 +1469,7 @@ const Game = (() => {
+     const url = URL.createObjectURL(blob);
+     const a = document.createElement("a");
+     a.href = url;
+-    a.download = "lamma-categories.json";
++    a.download = "bio-categories.json";
+     a.click();
+     URL.revokeObjectURL(url);
+     toast("⬇️ تم التصدير");
+@@ -1525,12 +1523,16 @@ const Game = (() => {
+     cv.width = W;
+     cv.height = H;
+     const c = cv.getContext("2d");
+-    const sw = THEME_SWATCH[THEMES[state.themeIndex]] || "#ff7a47";
++    const sw = THEME_SWATCH[THEMES[state.themeIndex]] || "#c3e813";
++    const logo = new Image();
++    logo.onload = logo.onerror = () => paint();
++    logo.src = "assets/logo-mark.png";
+ 
++    function paint() {
+     // خلفية
+     const bg = c.createLinearGradient(0, 0, W, H);
+-    bg.addColorStop(0, "#131829");
+-    bg.addColorStop(1, "#0c0f1a");
++    bg.addColorStop(0, "#17191e");
++    bg.addColorStop(1, "#0f1013");
+     c.fillStyle = bg;
+     c.fillRect(0, 0, W, H);
+ 
+@@ -1540,48 +1542,50 @@ const Game = (() => {
+     c.strokeRect(40, 40, W - 80, H - 80);
+ 
+     c.textAlign = "center";
++    if (logo.complete && logo.naturalWidth) c.drawImage(logo, W / 2 - 230, 92, 120, 112);
+     c.fillStyle = sw;
+-    c.font = "900 90px Tajawal, Arial";
+-    c.fillText("لَمة", W / 2, 200);
++    c.font = "800 96px 'Baloo Bhaijaan 2', Tajawal, Arial";
++    c.fillText("بايو", W / 2 + 60, 190);
+ 
+-    c.fillStyle = "#aeb4c7";
+-    c.font = "700 40px Tajawal, Arial";
++    c.fillStyle = "#bdc0c8";
++    c.font = "600 40px 'IBM Plex Sans Arabic', Tajawal, Arial";
+     c.fillText("نتيجة المباراة", W / 2, 270);
+ 
+     // الفائز
+     let winLine = a.score === b.score ? "🤝 تعادل" : "🏆 " + (a.score > b.score ? a.name : b.name);
+-    c.fillStyle = "#ffb46b";
+-    c.font = "900 70px Tajawal, Arial";
++    c.fillStyle = "#f9e09b";
++    c.font = "800 70px 'Baloo Bhaijaan 2', Tajawal, Arial";
+     c.fillText(winLine, W / 2, 430);
+ 
+     // الفرق والنقاط
+     function teamBox(name, score, color, y) {
+-      c.fillStyle = "#1a2138";
++      c.fillStyle = "#1f2228";
+       roundRect(c, 140, y, W - 280, 150, 24);
+       c.fill();
+       c.fillStyle = color;
+-      c.font = "800 50px Tajawal, Arial";
++      c.font = "700 50px 'IBM Plex Sans Arabic', Tajawal, Arial";
+       c.fillText(name, W / 2, y + 65);
+-      c.fillStyle = "#ffb46b";
+-      c.font = "900 80px Tajawal, Arial";
++      c.fillStyle = "#f5f2e9";
++      c.font = "800 80px 'Baloo Bhaijaan 2', Tajawal, Arial";
+       c.fillText(score, W / 2, y + 135);
+     }
+-    teamBox(a.name, a.score, "#3aa0ff", 540);
+-    teamBox(b.name, b.score, "#ff5d73", 730);
++    teamBox(a.name, a.score, state.teamColors[0] || "#9fe0ec", 540);
++    teamBox(b.name, b.score, state.teamColors[1] || "#e8949d", 730);
+ 
+-    c.fillStyle = "#8a90a8";
+-    c.font = "700 34px Tajawal, Arial";
+-    c.fillText("العب الآن • لَمة", W / 2, 980);
++    c.fillStyle = "#8d919b";
++    c.font = "600 34px 'IBM Plex Sans Arabic', Tajawal, Arial";
++    c.fillText("بايو · مسابقة علمية بين فريقين", W / 2, 980);
+ 
+     cv.toBlob((blob) => {
+       const url = URL.createObjectURL(blob);
+       const link = document.createElement("a");
+       link.href = url;
+-      link.download = "lamma-result.png";
++      link.download = "bio-result.png";
+       link.click();
+       URL.revokeObjectURL(url);
+       toast("📸 تم حفظ صورة النتيجة");
+     });
++    }
+     Sound.select();
+   }
+ 

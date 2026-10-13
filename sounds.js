@@ -9,9 +9,9 @@ const Sound = (() => {
   function ensure() {
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) ctx = new AC();
+      if (AC) { try { ctx = new AC(); } catch { return null; } }
     }
-    if (ctx && ctx.state === "suspended") ctx.resume();
+    if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
     return ctx;
   }
 
@@ -44,7 +44,8 @@ const Sound = (() => {
 
   const API = {
     setEnabled(v) {
-      enabled = v;
+      enabled = !!v;
+      if (!enabled) API.musicStop();
     },
     isEnabled: () => enabled,
     unlock: () => ensure(),
@@ -110,7 +111,7 @@ const Sound = (() => {
   }
 
   API.musicStart = function () {
-    if (music.on) return;
+    if (music.on || !enabled) return;
     ensure();
     music.on = true;
     padIdx = 0;

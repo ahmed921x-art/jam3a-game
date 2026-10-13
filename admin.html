@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>لوحة الأدمن — بايو</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0f1013" />
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="admin.css" />
+  </head>
+  <body data-theme="royal">
+    <div class="aurora" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand-btn" href="./" aria-label="الرجوع إلى اللعبة">
+        <img class="brand-mark" src="assets/logo-mark.png" alt="" width="336" height="313" />
+        <span class="brand-word">بايو <small class="adm-tag">الأدمن</small></span>
+      </a>
+      <div class="topbar-actions">
+        <span class="adm-user" id="admUser" hidden></span>
+        <button class="btn btn-ghost btn-sm" id="admSignOut" type="button" hidden>تسجيل الخروج</button>
+      </div>
+    </header>
+
+    <main class="wrap adm-wrap" id="main">
+      <!-- بوابة الدخول -->
+      <section class="card adm-gate" id="gate">
+        <img class="adm-gate-logo" src="assets/logo-full.png" alt="" width="414" height="417" />
+        <h1 id="gateTitle">لوحة الأدمن</h1>
+        <p class="hint" id="gateMsg">جاري التحميل…</p>
+        <button class="btn btn-google btn-lg" id="gateLogin" type="button" hidden>
+          <svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          <span>الدخول بحساب Google</span>
+        </button>
+      </section>
+
+      <!-- اللوحة -->
+      <section id="app" hidden>
+        <nav class="adm-tabs" role="tablist" aria-label="أقسام لوحة الأدمن">
+          <button class="adm-tab on" type="button" role="tab" aria-selected="true" data-tab="cats">✏️ الفئات المضافة</button>
+          <button class="adm-tab" type="button" role="tab" aria-selected="false" data-tab="builtin">📚 الفئات الأساسية</button>
+          <button class="adm-tab" type="button" role="tab" aria-selected="false" data-tab="admins" id="tabAdminsBtn" hidden>👥 المشرفون</button>
+        </nav>
+
+        <!-- 1) الفئات المضافة -->
+        <div class="adm-panel" data-panel="cats">
+          <div class="adm-grid">
+            <aside class="card adm-side">
+              <div class="adm-side-head">
+                <h2>الفئات المضافة</h2>
+                <button class="btn btn-gold btn-sm" id="newCat" type="button">+ فئة جديدة</button>
+              </div>
+              <p class="hint">تظهر لكل اللاعبين في اللعبة مباشرة بعد الحفظ.</p>
+              <div class="adm-list" id="catList"></div>
+            </aside>
+
+            <section class="card adm-editor" aria-labelledby="edTitle">
+              <h2 id="edTitle">فئة جديدة</h2>
+              <div class="adm-row">
+                <div class="field"><label for="fName">اسم الفئة</label><input id="fName" type="text" maxlength="60" placeholder="مثال: علم المناعة" autocomplete="off" /></div>
+                <div class="field adm-icon"><label for="fIcon">رمز</label><input id="fIcon" type="text" maxlength="8" placeholder="🧫" autocomplete="off" /></div>
+                <div class="field"><label for="fGroup">المجموعة</label>
+                  <select id="fGroup"><option value="bio">🧬 أحياء وعلوم</option><option value="kuwait">🇰🇼 الكويت</option><option value="general">🎯 عامة</option></select>
+                </div>
+              </div>
+              <div class="adm-row adm-img-row">
+                <div class="field"><label for="fImg">رابط صورة الفئة <small>(اختياري)</small></label>
+                  <input id="fImg" type="url" dir="ltr" placeholder="assets/categories/immunity.webp أو https://…" autocomplete="off" />
+                </div>
+                <div class="adm-img-prev hex" id="fImgPrev" aria-hidden="true"></div>
+              </div>
+
+              <div class="adm-q-head">
+                <h3>الأسئلة</h3>
+                <span class="adm-tiers" id="tierCount"></span>
+              </div>
+              <div id="qList" class="adm-qs"></div>
+              <div class="adm-q-add">
+                <button class="btn btn-ghost btn-sm" type="button" data-add="200">+ سؤال 200</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-add="400">+ سؤال 400</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-add="600">+ سؤال 600</button>
+              </div>
+
+              <p class="adm-err" id="formErr" role="alert"></p>
+              <div class="adm-actions">
+                <button class="btn btn-gold" id="saveCat" type="button">💾 حفظ ونشر</button>
+                <button class="btn btn-ghost adm-danger" id="delCat" type="button" hidden>🗑 حذف الفئة</button>
+              </div>
+
+              <details class="adm-import">
+                <summary>استيراد من ملف JSON (من محرر «فئاتي الخاصة» في اللعبة)</summary>
+                <input type="file" id="importFile" accept="application/json,.json" />
+                <p class="hint">يُعبّأ النموذج بأول فئة في الملف، وتراجعها قبل الحفظ.</p>
+              </details>
+            </section>
+          </div>
+        </div>
+
+        <!-- 2) الفئات الأساسية -->
+        <div class="adm-panel" data-panel="builtin" hidden>
+          <section class="card">
+            <div class="adm-side-head">
+              <h2>الفئات الأساسية</h2>
+              <button class="btn btn-gold btn-sm" id="saveOverrides" type="button">💾 حفظ التغييرات</button>
+            </div>
+            <p class="hint">أخفِ فئة من اللعبة أو حطّ لها صورة. الأسئلة نفسها في ملفات المشروع ولا تتغير من هنا.</p>
+            <label class="search-field adm-search">
+              <span class="sr-only">بحث</span>
+              <input id="builtinSearch" type="search" placeholder="ابحث عن فئة…" autocomplete="off" />
+            </label>
+            <div class="adm-builtin" id="builtinList"></div>
+          </section>
+        </div>
+
+        <!-- 3) المشرفون -->
+        <div class="adm-panel" data-panel="admins" hidden>
+          <section class="card">
+            <h2>المشرفون</h2>
+            <p class="hint">المالكون يُضافون من لوحة Firebase فقط. المالك يضيف المحررين ويحذفهم من هنا.</p>
+            <h3 class="adm-sub">المالكون</h3>
+            <ul class="adm-emails" id="ownerList"></ul>
+            <h3 class="adm-sub">المحررون</h3>
+            <ul class="adm-emails" id="editorList"></ul>
+            <form class="adm-add-admin" id="addAdminForm">
+              <label class="sr-only" for="newAdmin">إيميل Google</label>
+              <input id="newAdmin" type="email" dir="ltr" placeholder="name@gmail.com" autocomplete="off" required />
+              <button class="btn btn-gold" type="submit">إضافة محرر</button>
+            </form>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="questions.js"></script>
+    <script src="questions-extra.js"></script>
+    <script src="questions-kuwait.js"></script>
+    <script src="questions-pack2.js"></script>
+    <script src="questions-bio.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

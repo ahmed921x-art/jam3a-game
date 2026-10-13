@@ -1,10 +1,72 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ---------- مساعدات الصلاحيات ----------
+    // المشرفون في config/admins: { owners: [emails], editors: [emails] } (إيميلات بأحرف صغيرة)
+    // المالكون يُضافون يدوياً من لوحة Firebase فقط؛ المالك يضيف/يحذف المحررين من admin.html
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null && request.auth.token.email_verified == true;
+    }
+    function email() {
+      return request.auth.token.email.lower();
+    }
+    function admins() {
+      return get(/databases/$(database)/documents/config/admins).data;
+    }
+    function hasAdmins() {
+      return exists(/databases/$(database)/documents/config/admins);
+    }
+    function isOwner() {
+      return signedIn() && hasAdmins() && email() in admins().owners;
+    }
+    function isAdmin() {
+      return signedIn() && hasAdmins() && (email() in admins().owners || email() in admins().editors);
+    }
+
+    function validCategory(d) {
+      return d.keys().hasOnly(['name', 'icon', 'group', 'img', 'questions', 'updatedAt', 'updatedBy'])
+        && d.keys().hasAll(['name', 'icon', 'group', 'questions'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 60
+        && d.icon is string && d.icon.size() <= 16
+        && d.group in ['bio', 'kuwait', 'general']
+        && (!('img' in d) || (d.img is string && d.img.size() <= 500))
+        && d.questions is list && d.questions.size() >= 6 && d.questions.size() <= 90;
+    }
+    function validOverrides(d) {
+      return d.keys().hasOnly(['hidden', 'images', 'updatedAt', 'updatedBy'])
+        && (!('hidden' in d) || (d.hidden is list && d.hidden.size() <= 200))
+        && (!('images' in d) || (d.images is map && d.images.size() <= 300));
+    }
+
+    // ---------- بيانات اللاعبين ----------
     // كل مستخدم يقرأ ويكتب وثيقته فقط
     match /users/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+
+    // ---------- فئات لوحة الأدمن (يقرؤها الجميع) ----------
+    match /categories/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() && id.size() <= 40 && validCategory(request.resource.data);
+      allow delete: if isAdmin();
+    }
+    match /catalog/overrides {
+      allow read: if true;
+      allow create, update: if isAdmin() && validOverrides(request.resource.data);
+    }
+
+    // ---------- قائمة المشرفين ----------
+    match /config/admins {
+      allow read: if isAdmin();
+      // المالك يعدّل المحررين فقط؛ قائمة المالكين لا تتغير من التطبيق
+      allow update: if isOwner()
+        && request.resource.data.keys().hasOnly(['owners', 'editors'])
+        && request.resource.data.owners == resource.data.owners
+        && request.resource.data.editors is list
+        && request.resource.data.editors.size() <= 50;
+    }
+
     // كل ما عدا ذلك ممنوع
     match /{document=**} {
       allow read, write: if false;
