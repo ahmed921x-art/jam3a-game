@@ -57,10 +57,19 @@
     try {
       await auth.signInWithPopup(provider);
     } catch (e) {
-      if (e && (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment")) {
-        await auth.signInWithRedirect(provider);
-      } else {
-        $("#gateMsg").textContent = "تعذّر تسجيل الدخول. حاول مرة أخرى.";
+      const code = (e && e.code) || "";
+      if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
+        try {
+          await auth.signInWithRedirect(provider);
+        } catch (e2) {
+          $("#gateMsg").textContent = "تعذّر تسجيل الدخول: " + ((e2 && e2.code) || "خطأ غير معروف");
+        }
+      } else if (code === "auth/configuration-not-found" || code === "auth/operation-not-allowed") {
+        $("#gateMsg").textContent = "تسجيل الدخول بحساب Google غير مفعّل في Firebase. فعّله من Authentication ← Sign-in method ← Google.";
+      } else if (code === "auth/unauthorized-domain") {
+        $("#gateMsg").textContent = "هذا النطاق غير مضاف في Firebase Authentication ← Settings ← Authorized domains.";
+      } else if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
+        $("#gateMsg").textContent = "تعذّر تسجيل الدخول (" + (code || "خطأ غير معروف") + "). حاول مرة أخرى.";
       }
     }
   });
