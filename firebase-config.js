@@ -3,7 +3,7 @@
    يجب تحميله بعد سكربتات firebase-*-compat.js وقبل auth.js
    =========================================================== */
 
-firebase.initializeApp({
+if (typeof firebase !== "undefined") firebase.initializeApp({
   apiKey: "AIzaSyANA88M2zm2ydQl049Z8r3ygN3Zm6ndbDI",
   authDomain: "jam3a-game.firebaseapp.com",
   projectId: "jam3a-game",
@@ -13,6 +13,6 @@ firebase.initializeApp({
 });
 
 const FB = {
-  auth: firebase.auth(),
-  db: firebase.firestore(),
+  auth: typeof firebase !== "undefined" ? firebase.auth() : null,
+  db: typeof firebase !== "undefined" ? firebase.firestore() : null,
 };

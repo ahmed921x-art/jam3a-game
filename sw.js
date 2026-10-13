@@ -1,51 +1,47 @@
-/* لَمة — Service Worker للعمل بدون اتصال */
-const CACHE = "jam3a-v14";
+/* بايو: cache only this GitHub Pages scope; refresh assets online. */
+const CACHE = "bio-v1";
 const ASSETS = [
-  "./",
-  "./index.html",
-  "./style.css",
-  "./landing.css",
-  "./questions.js",
-  "./questions-extra.js",
-  "./questions-kuwait.js",
-  "./questions-pack2.js",
-  "./i18n.js",
-  "./firebase-config.js",
-  "./auth.js",
-  "./sounds.js",
-  "./effects.js",
-  "./game.js",
-  "./manifest.json",
-  "./icon.svg",
-  "./og-image.svg",
+  "./", "./index.html", "./style.css", "./landing.css",
+  "./questions.js", "./questions-extra.js", "./questions-kuwait.js", "./questions-pack2.js",
+  "./i18n.js", "./firebase-config.js", "./auth.js", "./sounds.js", "./effects.js",
+  "./game-logic.js", "./game.js", "./manifest.json", "./icon.svg", "./og-image.svg",
 ];
+const FIREBASE_SDK = ["app", "auth", "firestore"].map((name) => `https://www.gstatic.com/firebasejs/10.14.1/firebase-${name}-compat.js`);
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE).then(async (cache) => {
+    await cache.addAll(ASSETS);
+    await Promise.allSettled(FIREBASE_SDK.map(async (url) => {
+      const response = await fetch(url, { mode: "no-cors" });
+      await cache.put(url, response);
+    }));
+  }).then(() => self.skipWaiting()));
 });
 
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
+self.addEventListener("activate", (event) => {
+  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
-self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      return (
-        cached ||
-        fetch(e.request)
-          .then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-            return res;
-          })
-          .catch(() => cached)
-      );
-    })
-  );
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin && !FIREBASE_SDK.includes(url.href)) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    if (FIREBASE_SDK.includes(url.href)) {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      cache.put(request, response.clone()).catch(() => {});
+      return response;
+    }
+    try {
+      const response = await fetch(request);
+      if (response.ok && response.type === "basic") cache.put(request, response.clone()).catch(() => {});
+      return response;
+    } catch {
+      return await cache.match(request) || (request.mode === "navigate" ? await cache.match("./index.html") : Response.error());
+    }
+  })());
 });

@@ -11,6 +11,7 @@ const Auth = (() => {
 
   let user = GUEST; // نسخة متزامنة — Auth.current() تبقى فورية
   let syncTimer = null;
+  let pendingUid = null;
   const pendingSync = {};
 
   function current() {
@@ -47,9 +48,15 @@ const Auth = (() => {
   // تُستدعى من uWrite في game.js بعد كل كتابة محلية (دمج مع مهلة قصيرة)
   function cloudSet(base, value) {
     if (user.guest || !SYNC_BASES.includes(base)) return;
+    if (pendingUid !== user.id) {
+      clearTimeout(syncTimer);
+      Object.keys(pendingSync).forEach((key) => delete pendingSync[key]);
+      pendingUid = user.id;
+    }
     pendingSync[base] = value;
     clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
+      if (user.id !== pendingUid) return;
       const batch = { ...pendingSync, updatedAt: Date.now() };
       Object.keys(pendingSync).forEach((k) => delete pendingSync[k]);
       userDoc().set(batch, { merge: true }).catch(() => {});
@@ -58,20 +65,24 @@ const Auth = (() => {
 
   // عند الدخول: السحابة هي المرجع إن وُجدت، وإلا نرفع المحلي
   async function pullCloud() {
+    const uid = user.id;
     try {
-      const snap = await userDoc().get();
+      const doc = FB.db.collection("users").doc(uid);
+      const snap = await doc.get();
+      if (user.id !== uid) return;
       const data = snap.exists ? snap.data() : {};
       const up = {};
       SYNC_BASES.forEach((base) => {
         if (data[base] !== undefined && data[base] !== null) {
-          localStorage.setItem(key(base), JSON.stringify(data[base]));
+          localStorage.setItem(`sj_u_${uid}_${base}`, JSON.stringify(data[base]));
         } else {
-          const local = lsRead(base);
+          let local = null;
+          try { local = JSON.parse(localStorage.getItem(`sj_u_${uid}_${base}`)); } catch {}
           if (local !== null) up[base] = local;
         }
       });
       // الملف الشخصي (اسم/أفاتار) المخزن سحابياً يغلب
-      if (data.profile) {
+      if (data.profile && user.id === uid) {
         user = { ...user, name: data.profile.name || user.name, avatar: data.profile.avatar || user.avatar };
       } else {
         up.profile = { name: user.name, avatar: user.avatar };
@@ -79,7 +90,7 @@ const Auth = (() => {
       if (Object.keys(up).length) {
         up.email = user.email;
         up.updatedAt = Date.now();
-        await userDoc().set(up, { merge: true });
+        await doc.set(up, { merge: true });
       }
     } catch (e) {
       // بدون اتصال: نكمل محلياً وستتم المزامنة لاحقاً
@@ -88,6 +99,7 @@ const Auth = (() => {
 
   // ---------- الدخول والخروج ----------
   async function googleLogin() {
+    if (!FB.auth) return { ok: false, error: "تسجيل Google يحتاج اتصالاً بالإنترنت" };
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
       await FB.auth.signInWithPopup(provider);
@@ -103,7 +115,7 @@ const Auth = (() => {
   }
 
   function logout() {
-    FB.auth.signOut().catch(() => {});
+    FB.auth?.signOut().catch(() => {});
   }
   function continueAsGuest() {
     if (isLoggedIn()) logout();
@@ -120,7 +132,10 @@ const Auth = (() => {
   }
 
   // ---------- مراقبة حالة الدخول ----------
-  FB.auth.onAuthStateChanged(async (u) => {
+  FB.auth?.onAuthStateChanged(async (u) => {
+    clearTimeout(syncTimer);
+    pendingUid = null;
+    Object.keys(pendingSync).forEach((key) => delete pendingSync[key]);
     if (u) {
       user = {
         id: u.uid,
