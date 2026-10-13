@@ -28,7 +28,14 @@ const Catalog = (() => {
     if (!name || !id) return null;
     const questions = (Array.isArray(d.questions) ? d.questions : [])
       .filter((q) => q && TIERS.includes(q.points) && txt(q.q, 500) && txt(q.a, 500))
-      .map((q) => ({ points: q.points, q: txt(q.q, 500), a: txt(q.a, 500) }));
+      .map((q) => {
+        const x = { points: q.points, q: txt(q.q, 500), a: txt(q.a, 500) };
+        const img = safeUrl(q.img);
+        const aImg = safeUrl(q.aImg);
+        if (img) x.img = img;
+        if (aImg) x.aImg = aImg;
+        return x;
+      });
     const ok = TIERS.every((p) => new Set(questions.filter((q) => q.points === p).map((q) => q.q)).size >= 2);
     if (!ok) return null;
     const cat = { id: String(id), name, icon: txt(d.icon, 16) || "📁", group: GROUPS.includes(d.group) ? d.group : "general", questions, admin: true };

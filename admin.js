@@ -142,17 +142,34 @@
     });
   }
 
-  function qRow(points = 200, q = "", a = "") {
+  function qRow(points = 200, q = "", a = "", img = "", aImg = "") {
     const row = document.createElement("div");
     row.className = "adm-q";
     row.innerHTML = `
       <select aria-label="النقاط">${TIERS.map((p) => `<option value="${p}">${p}</option>`).join("")}</select>
       <input class="q" type="text" maxlength="500" placeholder="السؤال" aria-label="السؤال" />
       <input class="a" type="text" maxlength="500" placeholder="الإجابة" aria-label="الإجابة" />
-      <button type="button" class="adm-rm" aria-label="حذف السؤال">✕</button>`;
+      <button type="button" class="adm-imgbtn" aria-expanded="false" aria-label="صور السؤال والإجابة" title="صور السؤال والإجابة">🖼</button>
+      <button type="button" class="adm-rm" aria-label="حذف السؤال">✕</button>
+      <div class="adm-q-imgs" hidden>
+        <label><span>صورة السؤال</span><input class="qi" type="url" dir="ltr" placeholder="assets/questions/… أو https://…" /></label>
+        <label><span>صورة الإجابة</span><input class="ai" type="url" dir="ltr" placeholder="assets/questions/… أو https://…" /></label>
+      </div>`;
     row.querySelector("select").value = String(points);
     row.querySelector(".q").value = q;
     row.querySelector(".a").value = a;
+    row.querySelector(".qi").value = img || "";
+    row.querySelector(".ai").value = aImg || "";
+    const imgs = row.querySelector(".adm-q-imgs");
+    const imgBtn = row.querySelector(".adm-imgbtn");
+    const syncImgBtn = () => imgBtn.classList.toggle("has", !!(row.querySelector(".qi").value.trim() || row.querySelector(".ai").value.trim()));
+    imgBtn.addEventListener("click", () => {
+      imgs.hidden = !imgs.hidden;
+      imgBtn.setAttribute("aria-expanded", !imgs.hidden);
+      if (!imgs.hidden) row.querySelector(".qi").focus();
+    });
+    imgs.addEventListener("input", syncImgBtn);
+    syncImgBtn();
     row.querySelector(".adm-rm").addEventListener("click", () => {
       row.remove();
       changed();
@@ -170,7 +187,7 @@
   function fillQuestions(questions) {
     const box = $("#qList");
     box.innerHTML = "";
-    questions.forEach((q) => box.appendChild(qRow(q.points, q.q, q.a)));
+    questions.forEach((q) => box.appendChild(qRow(q.points, q.q, q.a, q.img, q.aImg)));
     sortRows();
     updateTiers();
   }
@@ -207,7 +224,14 @@
 
   function readForm() {
     const questions = $$("#qList .adm-q")
-      .map((r) => ({ points: +r.querySelector("select").value, q: norm(r.querySelector(".q").value), a: norm(r.querySelector(".a").value) }))
+      .map((r) => {
+        const x = { points: +r.querySelector("select").value, q: norm(r.querySelector(".q").value), a: norm(r.querySelector(".a").value) };
+        const img = norm(r.querySelector(".qi").value);
+        const aImg = norm(r.querySelector(".ai").value);
+        if (img) x.img = img;
+        if (aImg) x.aImg = aImg;
+        return x;
+      })
       .filter((x) => x.q || x.a);
     return { name: norm($("#fName").value), icon: norm($("#fIcon").value) || "📁", group: $("#fGroup").value, img: norm($("#fImg").value), questions };
   }
@@ -228,6 +252,8 @@
     const dupBuiltin = BUILTIN.find((c) => c.questions.some((x) => d.questions.some((y) => y.q === x.q.trim())));
     if (dupBuiltin) return `أحد الأسئلة موجود أصلاً في فئة «${dupBuiltin.name}». غيّره حتى لا يتكرر في اللعبة.`;
     if (safeUrl(d.img) === null) return "رابط الصورة لازم يبدأ بـ https:// أو assets/";
+    const badImg = d.questions.find((x) => safeUrl(x.img) === null || safeUrl(x.aImg) === null);
+    if (badImg) return `رابط صورة غير صالح في السؤال «${badImg.q}» — لازم يبدأ بـ https:// أو assets/`;
     if (d.questions.length > 90) return "الحد الأقصى 90 سؤالاً للفئة.";
     return "";
   }
@@ -332,7 +358,7 @@
         $("#fName").value = norm(c.name).slice(0, 60);
         $("#fIcon").value = norm(c.icon).slice(0, 8);
         $("#fImg").value = "";
-        fillQuestions(c.questions.filter((q) => q && TIERS.includes(q.points)).map((q) => ({ points: q.points, q: norm(q.q), a: norm(q.a) })));
+        fillQuestions(c.questions.filter((q) => q && TIERS.includes(q.points)).map((q) => ({ points: q.points, q: norm(q.q), a: norm(q.a), img: norm(q.img), aImg: norm(q.aImg) })));
         previewImg();
         changed();
         toast("📥 تم تعبئة النموذج. راجع ثم احفظ");
