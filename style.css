@@ -1338,20 +1338,13 @@ html[dir="ltr"] body[data-mode="light"] .mt-knob {
   padding: 10px 6px;
   text-align: center;
 }
+/* صورة الفئة (حقل img) تُعرض داخل الخلية السداسية مثل الشعار */
 .cat-media img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 76px;
+  height: 68px;
+  clip-path: var(--hex);
   object-fit: cover;
-}
-.cat-media img + .cat-name {
-  position: absolute;
-  bottom: 8px;
-  inset-inline: 6px;
-  background: rgba(15, 16, 19, 0.82);
-  color: #fff;
-  border-radius: 10px;
+  background: var(--cc);
 }
 .cat-media .big-ic {
   display: grid;

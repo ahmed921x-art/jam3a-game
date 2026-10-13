@@ -83,11 +83,22 @@ CATEGORIES.push(
   }
 );
 
+/* ---------- صور الفئات ----------
+   ضع الصورة في مجلد assets/categories/ ثم اكتب اسم ملفها أمام معرّف الفئة.
+   مثال:  cell: "cell.webp",
+   الفئة بلا صورة تعرض رمزها التعبيري كالمعتاد. القائمة الكاملة للمعرّفات: assets/categories/README.md
+*/
+const CATEGORY_IMAGES = {
+  // cell: "cell.webp",
+  // genetics: "genetics.webp",
+};
+
 /* ---------- تصنيف الفئات للمنتقي (بحث/تصفية في bio-ui.js) ---------- */
 (() => {
   const BIO = ["cell", "genetics", "microbes", "ecology", "science", "body", "animals", "nature", "health", "space", "inventions"];
   const KUWAIT = ["kuwait", "kw-history", "kw-food", "kw-proverbs", "kw-dialect", "kw-places", "gulf-artists"];
   CATEGORIES.forEach((c) => {
+    if (CATEGORY_IMAGES[c.id]) c.img = "assets/categories/" + CATEGORY_IMAGES[c.id];
     if (!c.group) c.group = BIO.includes(c.id) ? "bio" : KUWAIT.includes(c.id) ? "kuwait" : "general";
   });
   // الأحياء والعلوم أولاً، ثم الكويت، ثم العامة — مع الحفاظ على الترتيب الداخلي
