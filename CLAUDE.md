@@ -27,7 +27,7 @@ All scripts are plain IIFE modules attached as globals, loaded in a strict order
 
 ```
 questions.js → questions-extra.js → questions-kuwait.js → questions-pack2.js → questions-bio.js
-→ i18n.js → auth.js → sounds.js → effects.js → game.js → bio-ui.js
+→ i18n.js → auth.js → sounds.js → effects.js → game-logic.js → game.js → bio-ui.js
 ```
 
 - **`questions.js`** declares `const CATEGORIES = [...]` (the base packs). The other three question files **extend it via `CATEGORIES.push(...)`**, so they must load after it and before `game.js`. Each category: `{ id, name, icon, img?, questions: [{ points: 200|400|600, q, a, img?, aImg? }] }` with **at least 2 questions per point tier** (the game picks 2 per tier per board). `img`/`aImg` are optional image URLs (category card, question image, answer image) — rendered when present, icon/text-only otherwise. Run the validation one-liner above after touching question files; also watch for duplicate questions across categories (same question in two categories can appear twice in one game).
@@ -38,9 +38,10 @@ questions.js → questions-extra.js → questions-kuwait.js → questions-pack2.
 - **`bio-ui.js`** — presentation-only layer (never mutates game state, never calls `Game.*`): category search/filter (`#catSearch`, `#catFilters`, `.cat-tile[data-group]`), setup start bar (`#setupStatus`, parses `#catCounter` "x / y"), theme labels, golden-round wager chips/steps, modal focus trap/restore, achievements count, editor empty state. It observes DOM that game.js renders — keep those class names in sync.
 - **Design system** — tokens at the top of `style.css` (logo colors, ink surfaces, `--accent` per theme, `body[data-mode="light"]`). Surface tokens (`--surface`, `--surface-2`) are declared on `body`, not `:root`, so light mode can override them. `landing.css` holds landing/result/auth/profile/help/editor. Note: `updateCounter()` writes into the first `.hint b` in the document — keep `#catsHint` first.
 - **`sounds.js`** (`Sound`, Web Audio synth — no audio files), **`effects.js`** (`FX`, starfield/confetti canvas).
-- **`sw.js`** — precache list `ASSETS` + cache-first fetch. **Any new file must be added to `ASSETS`, and `CACHE` must be bumped (`jam3a-vN`) on every release**, otherwise installed PWAs keep serving stale code.
+- **`sw.js`** — precache list `ASSETS` + cache-first fetch. **Any new file must be added to `ASSETS`, and `CACHE` must be bumped (`bio-vN`) on every release**, otherwise installed PWAs keep serving stale code.
 
-Pending for release (see `HANDOFF-CODEX.md`): bump `CACHE` and add `bio-ui.js`, `questions-bio.js`, `assets/*` to `sw.js`; apply `handoff/game-js-bio.patch` (team/theme colors, accessible lifeline buttons, BIO share image).
+- **`game-logic.js`** (`BioRules`) — pure rules (board picking without duplicate questions, swap replacement, award, wager clamp, golden round, drift-free timer, save-snapshot validation, custom-category sanitising). Loaded before `game.js`; tested with `node --test tests/content.test.js tests/game-logic.test.js`.
+- **`sw.js`** cache name is now `bio-vN` (network-first for same-origin files, cache fallback offline; only deletes its own `bio-`/`jam3a-v` caches).
 
 Legacy note: localStorage keys and the password-hash salt still use the `sj_`/seenjeem prefix from the project this was forked from. Do not "clean these up" — renaming them wipes existing users' accounts, stats, and custom categories.
 

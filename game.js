@@ -1,5 +1,5 @@
 /* ===========================================================
-   لَمة — منطق اللعبة الكامل (نسخة عالمية)
+   بايو — منطق اللعبة
    حسابات + ملف شخصي + ثيمات + لغتان + إحصائيات + اللعبة
    =========================================================== */
 
@@ -16,28 +16,37 @@ const Game = (() => {
     {
       id: "swap",
       label: "تبديل السؤال",
+      labelEn: "Swap question",
       icon: "🔄",
       desc: "مو عاجبكم السؤال؟ بدّلوه بسؤال ثاني من نفس الفئة وبنفس النقاط",
+      descEn: "Replace this question with another of the same value.",
       start: "بدّل السؤال",
+      startEn: "Swap question",
     },
     {
       id: "phone",
       label: "اتصال بصديق",
+      labelEn: "Phone a friend",
       icon: "📞",
       desc: "صديقك اللي يعرف كل شي هذا وقته. دق عليه",
+      descEn: "Call a friend for up to one minute. The question timer pauses.",
       start: "ابدأ",
+      startEn: "Start call",
     },
     {
       id: "two",
       label: "جاوب جوابين",
+      labelEn: "Two answers",
       icon: "✌️",
       desc: "مو متأكدين من الجواب؟ عطوا جوابين بدل جواب واحد — إذا أحدهم صح تنحسب لكم",
+      descEn: "Give two possible answers to this question.",
       start: "فعّل",
+      startEn: "Use lifeline",
     },
   ];
   const PHONE_SECONDS = 60;
 
-  const TEAM_COLORS = ["#3aa0ff", "#ff5d73", "#34d399", "#a78bfa", "#f59e0b", "#ec4899"];
+  const TEAM_COLORS = ["#9fe0ec", "#e8949d", "#c3e813", "#e4a6f7", "#f9e09b", "#ffb36b"];
 
   // الإنجازات: شرط لكل إنجاز يعتمد على الإحصائيات
   const ACHIEVEMENTS = [
@@ -70,9 +79,11 @@ const Game = (() => {
     answerShown: false,
     goldenPlayed: false,
     golden: null,
+    phase: "setup", // setup, board, question, golden, tie, result
+    usedQuestions: [],
     settings: { seconds: 60, random: true, sound: true, golden: false },
     themeIndex: 0,
-    teamColors: ["#3aa0ff", "#ff5d73"],
+    teamColors: ["#9fe0ec", "#e8949d"],
   };
 
   let customCats = [];
@@ -80,6 +91,8 @@ const Game = (() => {
 
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => document.querySelectorAll(s);
+  const loc = (ar, en) => I18N.lang === "en" ? en : ar;
+  const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const screens = {
     landing: $("#landingScreen"),
     setup: $("#setupScreen"),
@@ -91,7 +104,7 @@ const Game = (() => {
     Object.values(screens).forEach((s) => s.classList.remove("active"));
     screens[scr].classList.add("active");
     document.body.classList.toggle("in-game", scr === "board");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }
 
   function toast(msg) {
@@ -117,26 +130,31 @@ const Game = (() => {
     }
   }
   function uWrite(base, v) {
-    localStorage.setItem(Auth.key(base), JSON.stringify(v));
-    Auth.cloudSet(base, v); // مزامنة سحابية للمسجلين (تتجاهل الضيف تلقائياً)
+    try { localStorage.setItem(Auth.key(base), JSON.stringify(v)); } catch { toast("تعذّر حفظ البيانات على هذا الجهاز"); return; }
+    Auth.cloudSet(base, v);
   }
 
   function loadCustom() {
-    customCats = uRead("custom", []);
+    const raw = uRead("custom", []);
+    customCats = Array.isArray(raw) ? raw.map(BioRules.cleanCategory).filter(Boolean) : [];
   }
   function saveCustom() {
     uWrite("custom", customCats);
   }
 
   function getStats() {
-    return uRead("stats", { games: 0, best: 0, q: 0 });
+    const raw = uRead("stats", {});
+    const v = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    const number = (x) => Number.isFinite(x) && x >= 0 ? x : 0;
+    return { ...v, games: number(v.games), best: number(v.best), q: number(v.q), golden: number(v.golden) };
   }
   function saveStats(s) {
     uWrite("stats", s);
   }
 
   function getHistory() {
-    return uRead("history", []);
+    const raw = uRead("history", []);
+    return Array.isArray(raw) ? raw.filter((x) => x && typeof x === "object" && Number.isFinite(x.date)).slice(0, 20) : [];
   }
   function addHistory(rec) {
     const h = getHistory();
@@ -145,7 +163,8 @@ const Game = (() => {
   }
 
   function getUnlocked() {
-    return uRead("ach", []);
+    const raw = uRead("ach", []);
+    return Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : [];
   }
   // يفحص الإنجازات الجديدة، يحفظها، ويعيد قائمة المفتوحة حديثاً
   function checkAchievements() {
@@ -164,30 +183,44 @@ const Game = (() => {
   }
 
   function saveGame() {
+    if (state.phase === "setup" || state.phase === "result") return;
     uWrite("save", {
+      version: 2,
       teams: state.teams,
       turn: state.turn,
       cats: state.cats,
       settings: state.settings,
       teamColors: state.teamColors,
       goldenPlayed: state.goldenPlayed,
+      golden: state.golden,
+      phase: state.phase,
+      current: state.current ? { ci: state.current.ci, qi: state.current.qi, points: state.current.points, tie: !!state.current.tie, q: state.current.q, a: state.current.a, img: state.current.img, aImg: state.current.aImg } : null,
+      answerShown: state.answerShown,
+      questionView: state.current ? $("#qFrame").dataset.view : null,
+      timer: { elapsed: state.timer.elapsed, paused: state.timer.paused },
+      usedQuestions: state.usedQuestions,
     });
   }
   function clearSave() {
     localStorage.removeItem(Auth.key("save"));
   }
   function hasSave() {
-    return !!localStorage.getItem(Auth.key("save"));
+    return BioRules.validateSnapshot(uRead("save", null));
   }
 
   // إعدادات عامة (غير مرتبطة بالمستخدم)
   function loadSettings() {
     try {
-      Object.assign(state.settings, JSON.parse(localStorage.getItem(LS_SETTINGS)) || {});
+      const value = JSON.parse(localStorage.getItem(LS_SETTINGS));
+      if (!value || typeof value !== "object" || Array.isArray(value)) return;
+      if (typeof value.random === "boolean") state.settings.random = value.random;
+      if (typeof value.sound === "boolean") state.settings.sound = value.sound;
+      if (typeof value.golden === "boolean") state.settings.golden = value.golden;
+      if ([4, 5, 6].includes(value.catCount)) state.settings.catCount = value.catCount;
     } catch {}
   }
   function saveSettings() {
-    localStorage.setItem(LS_SETTINGS, JSON.stringify(state.settings));
+    try { localStorage.setItem(LS_SETTINGS, JSON.stringify(state.settings)); } catch { toast(loc("تعذّر حفظ الإعدادات", "Settings could not be saved.")); }
   }
 
   // ====================================================
@@ -231,19 +264,14 @@ const Game = (() => {
     recordTheme();
     Sound.select();
   }
-  const THEME_NAMES = {
-    royal: "لَمة (الأساسي)",
-    emerald: "زمردي",
-    crimson: "قرمزي",
-    ocean: "محيطي",
-    violet: "بنفسجي",
-  };
+  // الأسماء من I18N (theme_*) — المفاتيح الداخلية ثابتة حفاظاً على الإعدادات المحفوظة
+  const THEME_NAMES = new Proxy({}, { get: (_, th) => I18N.t("theme_" + String(th)) });
   const THEME_SWATCH = {
-    royal: "#ff7a47",
-    emerald: "#34d399",
-    crimson: "#fb7185",
-    ocean: "#38bdf8",
-    violet: "#a78bfa",
+    royal: "#c3e813",
+    emerald: "#f9e09b",
+    crimson: "#e8949d",
+    ocean: "#9fe0ec",
+    violet: "#e4a6f7",
   };
   function buildThemePicker() {
     const box = $("#themePicker");
@@ -267,6 +295,7 @@ const Game = (() => {
     seg.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
+      if (b.dataset.v === "1" && !state.settings.sound) return toast(loc("فعّل الصوت أولاً", "Turn on sound first."));
       $$("#musicSeg button").forEach((x) => x.classList.remove("on"));
       b.classList.add("on");
       Sound.unlock();
@@ -390,9 +419,9 @@ const Game = (() => {
       const w1 = r.winner === 1 ? "win" : "";
       const w2 = r.winner === 2 ? "win" : "";
       el.innerHTML = `
-        <span class="hi-team ${w1}">${r.t1}</span>
-        <span class="hi-score">${r.s1} - ${r.s2}</span>
-        <span class="hi-team ${w2}">${r.t2}</span>`;
+        <span class="hi-team ${w1}">${escapeHTML(r.t1)}</span>
+        <span class="hi-score">${Number.isFinite(r.s1) ? r.s1 : 0} - ${Number.isFinite(r.s2) ? r.s2 : 0}</span>
+        <span class="hi-team ${w2}">${escapeHTML(r.t2)}</span>`;
       box.appendChild(el);
     });
   }
@@ -419,6 +448,7 @@ const Game = (() => {
     goSetup();
   }
   function goSetup() {
+    state.phase = "setup";
     show("setup");
     checkResume();
   }
@@ -488,9 +518,9 @@ const Game = (() => {
         ${isCustom ? '<span class="custom-tag">خاص</span>' : ""}
         <span class="check">✓</span>
         <div class="cat-thumb">${
-          cat.img ? `<img src="${cat.img}" alt="" loading="lazy" />` : `<span class="ic">${cat.icon || "📁"}</span>`
+          cat.img ? `<img src="${escapeHTML(cat.img)}" alt="" loading="lazy" />` : `<span class="ic">${escapeHTML(cat.icon || "📁")}</span>`
         }</div>
-        <span class="nm">${cat.name}</span>
+        <span class="nm">${escapeHTML(cat.name)}</span>
         <span class="cat-count">${cat.questions.length} سؤال</span>`;
       tile.tabIndex = 0;
       tile.setAttribute("role", "button");
@@ -537,7 +567,7 @@ const Game = (() => {
   }
   function updateCounter() {
     $("#catCounter").textContent = `${state.selectedCats.length} / ${catTarget()}`;
-    const b = document.querySelector(".hint b");
+    const b = document.querySelector("#catsHint b");
     if (b) b.textContent = catTarget();
   }
 
@@ -619,49 +649,34 @@ const Game = (() => {
   // ====================================================
   //  بدء اللعبة
   // ====================================================
-  function pickQuestions(cat) {
-    const tiers = [200, 400, 600];
-    const out = [];
-    tiers.forEach((p) => {
-      let pool = cat.questions.filter((q) => q.points === p);
-      if (pool.length === 0) pool = cat.questions.slice();
-      let chosen = state.settings.random ? shuffle(pool.slice()).slice(0, 2) : pool.slice(0, 2);
-      while (chosen.length < 2) chosen.push(pool[0]);
-      chosen.forEach((q) => out.push({ ...q, points: p, done: false }));
-    });
-    return out;
-  }
-  function shuffle(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = (Math.random() * (i + 1)) | 0;
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
   function start() {
     Sound.unlock();
+    if (state.phase !== "setup" && state.phase !== "result") return;
     if (state.selectedCats.length !== catTarget())
       return toast(`اختر ${catTarget()} فئات بالضبط`);
-    const n1 = $("#team1").value.trim() || "الفريق الأول";
-    const n2 = $("#team2").value.trim() || "الفريق الثاني";
+    const n1 = $("#team1").value.trim() || loc("الفريق الأول", "Team One");
+    const n2 = $("#team2").value.trim() || loc("الفريق الثاني", "Team Two");
     state.teams[0] = { name: n1, score: 0, correct: 0, lifelines: cloneLifelines() };
     state.teams[1] = { name: n2, score: 0, correct: 0, lifelines: cloneLifelines() };
     state.turn = 1;
     state.goldenPlayed = false;
+    state.golden = null;
+    state.current = null;
+    state.usedQuestions = [];
 
     const cats = allCats();
-    state.cats = state.selectedCats.map((i) => {
-      const c = cats[i];
-      // pool: كل أسئلة الفئة — يلزم وسيلة "تبديل السؤال"
-      return { name: c.name, icon: c.icon || "📁", img: c.img || "", questions: pickQuestions(c), pool: c.questions };
-    });
+    try {
+      state.cats = BioRules.pickBoard(state.selectedCats.map((i) => cats[i]), state.settings.random);
+    } catch (error) {
+      return toast(loc("هذه الفئات لا تحتوي أسئلة فريدة كافية؛ اختر فئات أخرى", "These categories need more unique questions. Choose others."));
+    }
 
     document.documentElement.style.setProperty("--team1", state.teamColors[0]);
     document.documentElement.style.setProperty("--team2", state.teamColors[1]);
 
     buildBoard();
     refreshScores();
+    state.phase = "board";
     saveGame();
     show("board");
     Sound.open();
@@ -722,9 +737,9 @@ const Game = (() => {
       media.style.setProperty("--c2", c2);
       media.innerHTML =
         (cat.img
-          ? `<img src="${cat.img}" alt="" loading="lazy" />`
-          : `<span class="big-ic">${cat.icon || "📁"}</span>`) +
-        `<span class="cat-name">${cat.name}</span>`;
+          ? `<img src="${escapeHTML(cat.img)}" alt="" loading="lazy" />`
+          : `<span class="big-ic">${escapeHTML(cat.icon || "📁")}</span>`) +
+        `<span class="cat-name">${escapeHTML(cat.name)}</span>`;
 
       unit.appendChild(makeCol([0, 2, 4]));
       unit.appendChild(media);
@@ -742,10 +757,14 @@ const Game = (() => {
         if (!box) return;
         box.innerHTML = "";
         state.teams[t - 1].lifelines.forEach((l, li) => {
-          const el = document.createElement("span");
+          const el = document.createElement("button");
+          el.type = "button";
           el.className = "lifeline" + (l.used ? " used" : "");
           el.textContent = l.icon;
-          el.title = l.label;
+          const definition = LIFELINES.find((item) => item.id === l.id) || l;
+          el.title = loc(definition.label, definition.labelEn || definition.label);
+          el.setAttribute("aria-label", el.title);
+          el.disabled = l.used;
           el.addEventListener("click", () => useLifeline(t, li));
           box.appendChild(el);
         });
@@ -755,22 +774,23 @@ const Game = (() => {
 
   // ===== وسائل المساعدة: بطاقة جانبية بوصف وزر «ابدأ» (مثل سين جيم) =====
   function useLifeline(team, li) {
-    const l = state.teams[team - 1].lifelines[li];
-    if (l.used) return;
-    if (!state.current) return toast("تستخدم أثناء عرض السؤال");
+    const l = state.teams[team - 1]?.lifelines?.[li];
+    if (!l || l.used) return;
+    if (!state.current || state.answerShown || state.phase !== "question") return toast("تستخدم أثناء عرض السؤال فقط");
+    if (team !== state.turn) return toast("وسائل المساعدة للفريق صاحب الدور");
     if (state.current.tie) return toast("لا وسائل مساعدة في الشوط الفاصل");
     if (state.ll) return;
     const def = LIFELINES.find((d) => d.id === l.id) || l;
     state.ll = { team, li, countId: null, left: 0 };
-    $("#llTitle").textContent = l.label;
-    $("#llDesc").textContent = def.desc || "";
+    $("#llTitle").textContent = loc(def.label, def.labelEn || def.label);
+    $("#llDesc").textContent = loc(def.desc || "", def.descEn || def.desc || "");
     $("#llIcon").textContent = l.icon;
     $("#llIcon").hidden = false;
     $("#llRing").hidden = true;
     const startBtn = $("#llStartBtn");
-    startBtn.textContent = def.start || "ابدأ";
+    startBtn.textContent = loc(def.start || "ابدأ", def.startEn || def.start || "Start");
     startBtn.hidden = false;
-    $("#llCancelBtn").textContent = "رجوع";
+    $("#llCancelBtn").textContent = loc("رجوع", "Back");
     $("#qSideTeams").hidden = true;
     $("#llCard").hidden = false;
     Sound.open();
@@ -796,7 +816,7 @@ const Game = (() => {
   }
 
   function lifelineStart() {
-    if (!state.ll || !state.current) return;
+    if (!state.ll || !state.current || state.answerShown || state.phase !== "question") return;
     const { team, li } = state.ll;
     const l = state.teams[team - 1].lifelines[li];
     if (l.id === "swap") {
@@ -808,11 +828,11 @@ const Game = (() => {
     }
     if (l.id === "two") {
       const note = $("#qNote");
-      note.textContent = `✌️ ${state.teams[team - 1].name} يحق له جوابين على هذا السؤال`;
+      note.textContent = loc(`✌️ ${state.teams[team - 1].name} يحق له جوابين على هذا السؤال`, `✌️ ${state.teams[team - 1].name} may give two answers.`);
       note.classList.add("show");
       consumeLifeline();
       closeLifelineCard();
-      toast("✌️ جاوب جوابين مفعّلة");
+      toast(loc("✌️ جاوب جوابين مفعّلة", "✌️ Two answers activated."));
       return;
     }
     if (l.id === "phone") startPhoneCall();
@@ -831,18 +851,19 @@ const Game = (() => {
 
   function startPhoneCall() {
     state.ll.left = PHONE_SECONDS;
-    $("#llDesc").textContent = "عندك دقيقة وحدة تقدر تتصل فيها على شخص ممكن يكون عارف الإجابة";
+    state.ll.endAt = Date.now() + PHONE_SECONDS * 1000;
+    $("#llDesc").textContent = loc("عندك دقيقة وحدة تقدر تتصل فيها على شخص ممكن يكون عارف الإجابة", "You have one minute to call a friend.");
     $("#llIcon").hidden = true;
     $("#llRing").hidden = false;
     $("#llStartBtn").hidden = true;
-    $("#llCancelBtn").textContent = "إنهاء المكالمة";
+    $("#llCancelBtn").textContent = loc("إنهاء المكالمة", "End call");
     // يتوقف مؤقت السؤال أثناء المكالمة
     state.timer.paused = true;
     $("#pauseBtn").textContent = "▶";
     paintPhoneRing();
     consumeLifeline();
     state.ll.countId = setInterval(() => {
-      state.ll.left--;
+      state.ll.left = Math.max(0, Math.ceil((state.ll.endAt - Date.now()) / 1000));
       paintPhoneRing();
       if (state.ll.left <= 0) endPhoneCall();
     }, 1000);
@@ -860,10 +881,11 @@ const Game = (() => {
   function endPhoneCall() {
     closeLifelineCard();
     Sound.timeout();
-    toast("📞 انتهت المكالمة");
+    toast(loc("📞 انتهت المكالمة", "📞 Call ended."));
     // استئناف مؤقت السؤال إن كنا ما زلنا على شاشة السؤال
     if (state.current && !state.answerShown) {
       state.timer.paused = false;
+      state.timer.lastTick = Date.now();
       $("#pauseBtn").textContent = "⏸";
     }
   }
@@ -871,13 +893,13 @@ const Game = (() => {
   function swapQuestion() {
     const cur = state.current;
     const cat = state.cats[cur.ci];
-    const onBoard = new Set(cat.questions.map((q) => q.q));
-    const pool = (cat.pool || []).filter((p) => p.points === cur.points && !onBoard.has(p.q));
-    if (!pool.length) {
-      toast("ما فيه سؤال بديل لهذه الفئة");
+    const excluded = new Set([...state.usedQuestions, ...state.cats.flatMap((c) => c.questions.map((q) => BioRules.key(q.q)))]);
+    const q = BioRules.replacement(cat, cur.points, excluded);
+    if (!q) {
+      toast(loc("ما فيه سؤال بديل لهذه الفئة", "No replacement question is available."));
       return false;
     }
-    const q = { ...pool[(Math.random() * pool.length) | 0], points: cur.points, done: false };
+    state.usedQuestions.push(BioRules.key(cat.questions[cur.qi].q));
     cat.questions[cur.qi] = q;
     $("#qText").textContent = q.q;
     $("#answerText").textContent = q.a;
@@ -886,7 +908,7 @@ const Game = (() => {
     state.timer.elapsed = 0;
     paintTimer();
     saveGame();
-    toast("🔄 تم تبديل السؤال");
+    toast(loc("🔄 تم تبديل السؤال", "🔄 Question swapped."));
     return true;
   }
 
@@ -894,27 +916,30 @@ const Game = (() => {
     state.turn = t;
     $("#teamCard1").classList.toggle("active", t === 1);
     $("#teamCard2").classList.toggle("active", t === 2);
-    const label = `دور فريق : ${state.teams[t - 1].name}`;
+    const label = loc(`دور فريق : ${state.teams[t - 1].name}`, `${state.teams[t - 1].name}'s turn`);
     $("#bTurnPill").textContent = label;
     if (state.current && !state.current.tie) $("#qTurnPill").textContent = label;
     [1, 2].forEach((x) => $(`#qSideT${x}`).classList.toggle("turn", t === x));
   }
   function toggleTurn() {
+    if (state.phase !== "board") return;
     setTurn(state.turn === 1 ? 2 : 1);
     Sound.click();
     saveGame();
   }
 
   function animateScore(el, from, to) {
+    if (el._scoreFrame) cancelAnimationFrame(el._scoreFrame);
     const dur = 500;
     const t0 = performance.now();
     function step(now) {
       const p = Math.min(1, (now - t0) / dur);
       const ease = 1 - Math.pow(1 - p, 3);
       el.textContent = Math.round(from + (to - from) * ease);
-      if (p < 1) requestAnimationFrame(step);
+      if (p < 1) el._scoreFrame = requestAnimationFrame(step);
+      else el._scoreFrame = null;
     }
-    requestAnimationFrame(step);
+    el._scoreFrame = requestAnimationFrame(step);
   }
 
   function refreshScores(animate) {
@@ -930,9 +955,10 @@ const Game = (() => {
   }
 
   function adjust(team, delta) {
+    if (state.phase !== "board" || ![1, 2].includes(team) || !Number.isFinite(delta) || Math.abs(delta) > 1000) return;
     const el = $(`#t${team}Score`);
     const from = state.teams[team - 1].score;
-    state.teams[team - 1].score += delta;
+    state.teams[team - 1].score = Math.max(0, from + delta);
     animateScore(el, from, state.teams[team - 1].score);
     Sound.click();
     saveGame();
@@ -964,6 +990,8 @@ const Game = (() => {
 
   function askClose() {
     // «الرجوع للوحة» — يغلق السؤال بدون نقاط (الخلية تبقى متاحة)
+    if (state.phase === "tie") return toast(loc("احسموا الشوط الفاصل أولاً", "Finish the tie-breaker first."));
+    if (state.answerShown) return toast(loc("بعد كشف الإجابة، احكم على السؤال قبل الرجوع", "Judge the answer before returning to the board."));
     if (state.current) closeQuestion();
   }
 
@@ -972,14 +1000,16 @@ const Game = (() => {
   }
 
   function openQuestion(ci, qi, cell) {
-    const q = state.cats[ci].questions[qi];
-    if (q.done) return;
+    if (state.phase !== "board" || state.current) return;
+    const q = state.cats[ci]?.questions[qi];
+    if (!q || q.done) return;
     Sound.unlock();
     state.current = { ci, qi, cell, points: q.points };
     state.answerShown = false;
+    state.phase = "question";
 
     $("#qCat").textContent = state.cats[ci].name;
-    $("#qPoints").textContent = `${q.points} نقطة`;
+    $("#qPoints").textContent = loc(`${q.points} نقطة`, `${q.points} points`);
     $("#qText").textContent = q.q;
     $("#answerText").textContent = q.a;
     setImg("qImg", q.img);
@@ -991,11 +1021,12 @@ const Game = (() => {
     $("#awardT2").textContent = state.teams[1].name;
     setView("q");
     closeLifelineCard();
-    syncQuestionSide(`دور فريق : ${state.teams[state.turn - 1].name}`);
+    syncQuestionSide(loc(`دور فريق : ${state.teams[state.turn - 1].name}`, `${state.teams[state.turn - 1].name}'s turn`));
 
     $("#qModal").classList.add("active");
     Sound.open();
     startTimer();
+    saveGame();
   }
 
   // مزامنة الشريط الجانبي لشاشة السؤال (أسماء، نقاط، دور، وسائل)
@@ -1014,21 +1045,27 @@ const Game = (() => {
     return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   }
   function restartTimer() {
-    if (!state.current) return;
+    if (!state.current || state.answerShown) return;
     state.timer.elapsed = 0;
+    state.timer.lastTick = Date.now();
     paintTimer();
+    saveGame();
     Sound.click();
   }
-  function startTimer() {
+  function startTimer(elapsed = 0, paused = false) {
     stopTimer();
-    state.timer.elapsed = 0;
-    state.timer.paused = false;
-    $("#pauseBtn").textContent = "⏸";
+    state.timer.elapsed = elapsed;
+    state.timer.paused = paused;
+    state.timer.lastTick = Date.now();
+    $("#pauseBtn").textContent = paused ? "▶" : "⏸";
     paintTimer();
     state.timer.id = setInterval(() => {
-      if (state.timer.paused) return;
-      state.timer.elapsed++;
+      const next = BioRules.advanceTimer(state.timer.elapsed, state.timer.lastTick, Date.now(), state.timer.paused);
+      if (next.elapsed === state.timer.elapsed) { state.timer.lastTick = next.lastTick; return; }
+      state.timer.elapsed = next.elapsed;
+      state.timer.lastTick = next.lastTick;
       paintTimer();
+      if (state.timer.elapsed % 5 === 0) saveGame();
     }, 1000);
   }
   function paintTimer() {
@@ -1039,50 +1076,61 @@ const Game = (() => {
     state.timer.id = null;
   }
   function togglePause() {
-    if (!state.current) return;
+    if (!state.current || state.answerShown) return;
     state.timer.paused = !state.timer.paused;
+    state.timer.lastTick = Date.now();
     $("#pauseBtn").textContent = state.timer.paused ? "▶" : "⏸";
+    saveGame();
     Sound.click();
   }
 
   // ===== تنقّل شاشات السؤال → الإجابة → الحكم =====
   function showAnswer() {
-    if (!state.current) return;
+    if (!state.current || state.answerShown) return;
     state.answerShown = true;
     state.timer.paused = true;
+    closeLifelineCard();
     $("#pauseBtn").textContent = "▶";
     setView("a");
+    saveGame();
     Sound.select();
   }
   function backToQuestion() {
-    if (!state.current) return;
+    if (!state.current || !state.answerShown) return;
+    state.answerShown = false;
     setView("q");
     state.timer.paused = false;
+    state.timer.lastTick = Date.now();
     $("#pauseBtn").textContent = "⏸";
+    saveGame();
     Sound.click();
   }
   function openJudge() {
-    if (!state.current) return;
+    if (!state.current || !state.answerShown) return;
     setView("j");
+    saveGame();
     Sound.open();
   }
   function backToAnswer() {
-    if (!state.current) return;
+    if (!state.current || !state.answerShown) return;
     setView("a");
+    saveGame();
     Sound.click();
   }
 
   function award(team) {
-    if (!state.current) return;
+    if (!state.current || !state.answerShown || ![0, 1, 2].includes(team) || !["question", "tie"].includes(state.phase)) return;
 
     // وضع الشوط الفاصل
     if (state.current.tie) {
       if (team === 0) {
         // لا أحد أجاب → شوط فاصل آخر
+        state.usedQuestions.push(BioRules.key(state.current.q));
         closeQuestion();
         startTieBreaker();
         return;
       }
+      state.phase = "transition";
       state.teams[team - 1].score += 100; // نقطة الحسم
       state.teams[team - 1].correct = (state.teams[team - 1].correct || 0) + 1;
       Sound.correct();
@@ -1094,14 +1142,17 @@ const Game = (() => {
     }
 
     const { ci, qi, cell, points } = state.current;
+    const result = BioRules.award(state.teams, state.turn, team, points);
+    state.teams = result.teams;
+    state.usedQuestions.push(BioRules.key(state.cats[ci].questions[qi].q));
     if (team !== 0) {
-      state.teams[team - 1].score += points;
-      state.teams[team - 1].correct = (state.teams[team - 1].correct || 0) + 1;
       Sound.correct();
       const r = cell.getBoundingClientRect();
       FX.confettiBurst(r.left + r.width / 2, r.top + r.height / 2, 40, 1);
+      toast(result.stolen ? loc(`⚡ سرقة ناجحة: ${state.teams[team - 1].name} +${points}`, `⚡ Steal! ${state.teams[team - 1].name} +${points}`) : `✅ ${state.teams[team - 1].name} +${points}`);
     } else {
       Sound.wrong();
+      toast(loc("لم يحصل أي فريق على نقاط", "No team scored."));
     }
     state.cats[ci].questions[qi].done = true;
     cell.classList.add("done", "flip");
@@ -1109,13 +1160,14 @@ const Game = (() => {
     closeQuestion();
     refreshScores(true);
     updateProgress();
-    setTurn(state.turn === 1 ? 2 : 1);
+    setTurn(result.turn);
     // إحصائية الأسئلة
     const st = getStats();
     st.q = (st.q || 0) + 1;
     saveStats(st);
+    state.phase = allDone() ? "transition" : "board";
     saveGame();
-    if (allDone()) setTimeout(finish, 700);
+    if (state.phase === "transition") setTimeout(finish, 700);
   }
 
   function closeQuestion() {
@@ -1124,6 +1176,8 @@ const Game = (() => {
     state.current = null;
     state.answerShown = false;
     $("#qModal").classList.remove("active");
+    if (state.phase === "question") state.phase = "board";
+    saveGame();
   }
   function allDone() {
     return state.cats.every((c) => c.questions.every((q) => q.done));
@@ -1133,6 +1187,9 @@ const Game = (() => {
   //  النتيجة + الإحصائيات
   // ====================================================
   function finish() {
+    if (!["board", "transition"].includes(state.phase)) return;
+    if (state.phase === "board" && !allDone() && !window.confirm(loc("إنهاء المباراة قبل إكمال جميع الأسئلة؟", "End the match before all questions are played?"))) return;
+    state.phase = "transition";
     if (state.current) closeQuestion();
     stopTimer();
     $("#qModal").classList.remove("active");
@@ -1154,52 +1211,70 @@ const Game = (() => {
   //  👑 الجولة الذهبية — رهان نقاط على سؤال أخير
   // ====================================================
   function goldenPool() {
-    const pool = [];
-    allCats().forEach((c) => c.questions.forEach((q) => { if (q.points === 600) pool.push(q); }));
-    return pool.length ? pool : allCats().flatMap((c) => c.questions);
+    const seen = new Set([...state.usedQuestions, ...state.cats.flatMap((c) => c.questions.map((q) => BioRules.key(q.q)))]);
+    const selected = state.cats.flatMap((c) => c.pool || []).filter((q) => BioRules.validQuestion(q) && !seen.has(BioRules.key(q.q)));
+    const pool = selected.filter((q) => q.points === 600);
+    return pool.length ? pool : selected.length ? selected : allCats().flatMap((c) => c.questions).filter((q) => !seen.has(BioRules.key(q.q)));
   }
 
   function openGolden() {
-    const pool = goldenPool();
-    const q = pool[(Math.random() * pool.length) | 0];
-    state.golden = { q: q.q, a: q.a, img: q.img || "", aImg: q.aImg || "", wagers: [0, 0], results: [null, null], revealed: false };
+    if (!state.golden) {
+      const pool = goldenPool();
+      if (!pool.length) return endGame();
+      const q = pool[(Math.random() * pool.length) | 0];
+      state.golden = { q: q.q, a: q.a, img: q.img || "", aImg: q.aImg || "", wagers: [0, 0], results: [null, null], revealed: false, stage: "wager" };
+      state.usedQuestions.push(BioRules.key(q.q));
+    }
+    state.phase = "golden";
+    const g = state.golden;
 
     [1, 2].forEach((t) => {
       const team = state.teams[t - 1];
       $(`#gtName${t}`).textContent = team.name;
-      $(`#gtScore${t}`).textContent = `رصيدك: ${team.score}`;
+      $(`#gtScore${t}`).textContent = loc(`رصيدك: ${team.score}`, `Score: ${team.score}`);
       const inp = $(`#wager${t}`);
-      inp.value = 0;
+      inp.value = g.wagers[t - 1];
       inp.max = Math.max(0, team.score);
     });
-    $("#goldStageWager").style.display = "";
-    $("#goldStageQ").style.display = "none";
-    $("#goldJudge").style.display = "none";
-    $("#goldAnswerBox").classList.remove("show");
-    $("#goldRevealBtn").style.display = "";
+    $("#goldQText").textContent = g.q;
+    $("#goldAnswerText").textContent = g.a;
+    setImg("goldQImg", g.img);
+    setImg("goldAnswerImg", g.aImg);
+    $("#goldStageWager").style.display = g.stage === "wager" ? "" : "none";
+    $("#goldStageQ").style.display = g.stage === "wager" ? "none" : "";
+    $("#goldJudge").style.display = g.revealed ? "" : "none";
+    $("#goldAnswerBox").classList.toggle("show", g.revealed);
+    $("#goldRevealBtn").style.display = g.revealed ? "none" : "";
+    [1, 2].forEach((t) => {
+      $(`#gjName${t}`).textContent = state.teams[t - 1].name;
+      if (g.results[t - 1] !== null) $$(`#gjRow${t} .gj-btn`).forEach((b) => b.classList.toggle("on", (b.dataset.ok === "1") === g.results[t - 1]));
+    });
     $("#goldenModal").classList.add("active");
+    saveGame();
     Sound.open();
-    toast("👑 الجولة الذهبية! راهنوا بحكمة");
+    toast(loc("👑 الجولة الذهبية! راهنوا بحكمة", "👑 Golden round! Place your wagers."));
   }
 
   function goldenShowQuestion() {
+    if (state.phase !== "golden" || !state.golden || state.golden.stage !== "wager") return;
     [1, 2].forEach((t) => {
-      const max = Math.max(0, state.teams[t - 1].score);
-      let w = Math.round(+$(`#wager${t}`).value || 0);
-      w = Math.min(Math.max(0, w), max);
-      state.golden.wagers[t - 1] = w;
+      state.golden.wagers[t - 1] = BioRules.clampWager($(`#wager${t}`).value, state.teams[t - 1].score);
     });
+    state.golden.stage = "question";
     $("#goldQText").textContent = state.golden.q;
     $("#goldAnswerText").textContent = state.golden.a;
     setImg("goldQImg", state.golden.img);
     setImg("goldAnswerImg", state.golden.aImg);
     $("#goldStageWager").style.display = "none";
     $("#goldStageQ").style.display = "";
+    saveGame();
     Sound.select();
   }
 
   function goldenReveal() {
+    if (state.phase !== "golden" || !state.golden || state.golden.stage !== "question" || state.golden.revealed) return;
     state.golden.revealed = true;
+    saveGame();
     $("#goldAnswerBox").classList.add("show");
     $("#goldRevealBtn").style.display = "none";
     $("#goldJudge").style.display = "";
@@ -1210,7 +1285,9 @@ const Game = (() => {
   }
 
   function goldenSetResult(team, ok) {
+    if (state.phase !== "golden" || !state.golden?.revealed || ![1, 2].includes(team) || typeof ok !== "boolean") return;
     state.golden.results[team - 1] = ok;
+    saveGame();
     $$(`#gjRow${team} .gj-btn`).forEach((b) => {
       b.classList.toggle("on", (b.dataset.ok === "1") === ok);
     });
@@ -1218,14 +1295,11 @@ const Game = (() => {
   }
 
   function goldenApply() {
+    if (state.phase !== "golden" || !state.golden?.revealed) return;
     const g = state.golden;
-    if (g.results.some((r) => r === null)) return toast("حدد نتيجة الفريقين أولاً");
-    [0, 1].forEach((i) => {
-      if (g.wagers[i] > 0) {
-        state.teams[i].score += g.results[i] ? g.wagers[i] : -g.wagers[i];
-        if (g.results[i]) state.teams[i].correct = (state.teams[i].correct || 0) + 1;
-      }
-    });
+    if (g.results.some((r) => r === null)) return toast(loc("حدد نتيجة الفريقين أولاً", "Mark both teams' answers first."));
+    state.teams = BioRules.applyGolden(state.teams, g.wagers, g.results);
+    state.phase = "transition";
     state.goldenPlayed = true;
     state.golden = null;
     $("#goldenModal").classList.remove("active");
@@ -1234,21 +1308,26 @@ const Game = (() => {
     const st = getStats();
     st.golden = (st.golden || 0) + 1;
     saveStats(st);
+    saveGame();
     FX.confettiBurst(window.innerWidth / 2, window.innerHeight / 3, 50, 1.2);
     Sound.win();
     setTimeout(finish, 900);
   }
 
   // ===== شوط فاصل =====
-  function startTieBreaker() {
-    const pool = [];
-    allCats().forEach((c) => c.questions.forEach((q) => pool.push(q)));
-    const q = pool[(Math.random() * pool.length) | 0];
-    state.current = { tie: true, points: 0, q: q.q, a: q.a };
+  function startTieBreaker(savedQuestion = null) {
+    if (state.phase === "tie" && state.current) return;
+    const used = new Set([...state.usedQuestions, ...state.cats.flatMap((c) => c.questions.map((q) => BioRules.key(q.q)))]);
+    let pool = state.cats.flatMap((c) => c.pool || []).filter((q) => BioRules.validQuestion(q) && !used.has(BioRules.key(q.q)));
+    if (!pool.length) pool = allCats().flatMap((c) => c.questions).filter((q) => BioRules.validQuestion(q) && !used.has(BioRules.key(q.q)));
+    if (!savedQuestion && !pool.length) return endGame();
+    const q = savedQuestion || pool[(Math.random() * pool.length) | 0];
+    state.current = { tie: true, points: 0, q: q.q, a: q.a, img: q.img, aImg: q.aImg };
     state.answerShown = false;
+    state.phase = "tie";
 
-    $("#qCat").textContent = "⚡ شوط فاصل حاسم";
-    $("#qPoints").textContent = "نقطة الفوز";
+    $("#qCat").textContent = loc("⚡ شوط فاصل حاسم", "⚡ Tie-breaker");
+    $("#qPoints").textContent = loc("نقطة الفوز", "Winning point");
     $("#qText").textContent = q.q;
     $("#answerText").textContent = q.a;
     setImg("qImg", q.img);
@@ -1260,15 +1339,18 @@ const Game = (() => {
     $("#awardT2").textContent = state.teams[1].name;
     setView("q");
     closeLifelineCard();
-    syncQuestionSide("⚡ شوط فاصل حاسم");
+    syncQuestionSide(loc("⚡ شوط فاصل حاسم", "⚡ Tie-breaker"));
 
     $("#qModal").classList.add("active");
-    toast("🤝 تعادل! شوط فاصل يحسم الفوز ⚡");
+    toast(loc("🤝 تعادل! شوط فاصل يحسم الفوز ⚡", "🤝 It's tied! The next answer decides it. ⚡"));
     Sound.timeout();
     startTimer();
+    saveGame();
   }
 
   function endGame() {
+    if (state.phase === "result") return;
+    state.phase = "result";
     stopTimer();
     $("#qModal").classList.remove("active");
     clearSave();
@@ -1277,8 +1359,8 @@ const Game = (() => {
     $("#fsName2").textContent = b.name;
     $("#fsScore1").textContent = a.score;
     $("#fsScore2").textContent = b.score;
-    $("#fsCorrect1").textContent = `✅ ${a.correct || 0} إجابة صحيحة`;
-    $("#fsCorrect2").textContent = `✅ ${b.correct || 0} إجابة صحيحة`;
+    $("#fsCorrect1").textContent = loc(`✅ ${a.correct || 0} إجابة صحيحة`, `✅ ${a.correct || 0} correct`);
+    $("#fsCorrect2").textContent = loc(`✅ ${b.correct || 0} إجابة صحيحة`, `✅ ${b.correct || 0} correct`);
 
     let winner;
     if (a.score > b.score) {
@@ -1290,7 +1372,7 @@ const Game = (() => {
       Sound.win();
       FX.celebrate();
     } else {
-      winner = "🤝 تعادل!";
+      winner = loc("🤝 تعادل!", "🤝 Draw!");
       Sound.draw();
     }
     $("#winnerName").textContent = winner;
@@ -1322,6 +1404,9 @@ const Game = (() => {
 
   function playAgain() {
     clearSave();
+    state.phase = "setup";
+    state.golden = null;
+    state.usedQuestions = [];
     state.selectedCats = [];
     state.cats = [];
     state.current = null;
@@ -1332,8 +1417,13 @@ const Game = (() => {
   }
 
   function home() {
-    if (state.current) closeQuestion();
-    if (state.cats.length && !allDone()) saveGame();
+    if (state.current) {
+      state.timer.paused = true;
+      saveGame();
+      stopTimer();
+      $("#qModal").classList.remove("active");
+    }
+    if (state.cats.length && state.phase !== "result") saveGame();
     goLanding();
   }
 
@@ -1346,22 +1436,54 @@ const Game = (() => {
   function resume() {
     try {
       const snap = uRead("save", null);
-      if (!snap) return;
+      if (!BioRules.validateSnapshot(snap)) return toast("ملف المباراة المحفوظة غير صالح");
+      stopTimer();
       state.teams = snap.teams;
       state.turn = snap.turn;
       state.cats = snap.cats;
-      Object.assign(state.settings, snap.settings || {});
-      state.teamColors = snap.teamColors || state.teamColors;
+      if (snap.settings && typeof snap.settings === "object") {
+        for (const key of ["random", "sound", "golden"]) if (typeof snap.settings[key] === "boolean") state.settings[key] = snap.settings[key];
+        if ([4, 5, 6].includes(snap.settings.catCount)) state.settings.catCount = snap.settings.catCount;
+      }
+      state.teamColors = Array.isArray(snap.teamColors) && snap.teamColors.length === 2 && snap.teamColors.every((c) => /^#[0-9a-f]{6}$/i.test(c)) ? snap.teamColors : state.teamColors;
       state.goldenPlayed = !!snap.goldenPlayed;
+      state.golden = snap.golden && typeof snap.golden === "object" ? snap.golden : null;
+      state.usedQuestions = Array.isArray(snap.usedQuestions) ? snap.usedQuestions : [];
+      state.current = null;
+      state.answerShown = false;
+      state.phase = "board";
       document.documentElement.style.setProperty("--team1", state.teamColors[0]);
       document.documentElement.style.setProperty("--team2", state.teamColors[1]);
       buildBoard();
       refreshScores();
       show("board");
+      if (snap.phase === "golden" && state.golden) {
+        openGolden();
+      } else if (snap.phase === "tie" && snap.current?.tie) {
+        startTieBreaker(snap.current);
+        restoreQuestionState(snap);
+      } else if (snap.phase === "question" && snap.current) {
+        const { ci, qi } = snap.current;
+        openQuestion(ci, qi, $(`#board .cell[data-ci="${ci}"][data-qi="${qi}"]`));
+        restoreQuestionState(snap);
+      } else if (snap.phase === "transition" || allDone()) {
+        state.phase = "transition";
+        finish();
+      }
       Sound.open();
     } catch {
       toast("تعذّر الاستكمال");
     }
+  }
+  function restoreQuestionState(snap) {
+    if (!state.current) return;
+    state.answerShown = !!snap.answerShown;
+    const view = state.answerShown && ["a", "j"].includes(snap.questionView) ? snap.questionView : "q";
+    setView(view);
+    const elapsed = Number.isFinite(snap.timer?.elapsed) && snap.timer.elapsed >= 0 ? Math.floor(snap.timer.elapsed) : 0;
+    startTimer(elapsed, true);
+    saveGame();
+    toast(loc("تم استكمال السؤال؛ المؤقت متوقف حتى تضغط متابعة", "Question restored; press play to resume the timer."));
   }
   function discardSave() {
     clearSave();
@@ -1391,13 +1513,13 @@ const Game = (() => {
     CATEGORIES.forEach((c) => {
       const it = document.createElement("div");
       it.className = "ed-item";
-      it.innerHTML = `<span>${c.icon} ${c.name}</span><span class="lock">🔒</span>`;
+      it.innerHTML = `<span>${escapeHTML(c.icon)} ${escapeHTML(c.name)}</span><span class="lock">🔒</span>`;
       list.appendChild(it);
     });
     customCats.forEach((c, i) => {
       const it = document.createElement("div");
       it.className = "ed-item";
-      it.innerHTML = `<span>${c.icon} ${c.name}</span><span class="del">🗑</span>`;
+      it.innerHTML = `<span>${escapeHTML(c.icon)} ${escapeHTML(c.name)}</span><span class="del">🗑</span>`;
       it.querySelector("span").addEventListener("click", () => loadIntoForm(i));
       it.querySelector(".del").addEventListener("click", (e) => {
         e.stopPropagation();
@@ -1454,9 +1576,8 @@ const Game = (() => {
       const a = row.querySelector(".a").value.trim();
       if (q && a) questions.push({ points: p, q, a });
     });
-    const ok = [200, 400, 600].every((p) => questions.filter((x) => x.points === p).length >= 2);
-    if (!ok) return toast("سؤالان على الأقل لكل قيمة (200/400/600)");
-    const cat = { id: "c_" + Date.now(), name, icon, questions, custom: true };
+    const cat = BioRules.cleanCategory({ id: editing !== null ? customCats[editing].id : "c_" + Date.now(), name, icon, questions });
+    if (!cat) return toast("يلزم سؤالان مختلفان على الأقل لكل قيمة (200/400/600)");
     if (editing !== null) customCats[editing] = cat;
     else customCats.push(cat);
     saveCustom();
@@ -1471,7 +1592,7 @@ const Game = (() => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "lamma-categories.json";
+    a.download = "bio-categories.json";
     a.click();
     URL.revokeObjectURL(url);
     toast("⬇️ تم التصدير");
@@ -1479,15 +1600,20 @@ const Game = (() => {
   function importData(ev) {
     const file = ev.target.files[0];
     if (!file) return;
+    if (file.size > 2_000_000) { ev.target.value = ""; return toast("الملف كبير جداً"); }
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result);
-        if (!Array.isArray(data)) throw new Error();
-        customCats = customCats.concat(data);
+        if (!Array.isArray(data) || data.length > 100) throw new Error();
+        const incoming = data.map(BioRules.cleanCategory);
+        if (incoming.some((x) => !x)) throw new Error();
+        const names = new Set(customCats.map((c) => BioRules.key(c.name)));
+        const unique = incoming.filter((c) => { const k = BioRules.key(c.name); if (names.has(k)) return false; names.add(k); return true; });
+        customCats = customCats.concat(unique);
         saveCustom();
         renderEditorList();
-        toast("⬆️ تم الاستيراد");
+        toast(`⬆️ تم استيراد ${unique.length} فئة`);
       } catch {
         toast("ملف غير صالح");
       }
@@ -1502,6 +1628,9 @@ const Game = (() => {
   function toggleSound() {
     state.settings.sound = !state.settings.sound;
     Sound.setEnabled(state.settings.sound);
+    if (!state.settings.sound) {
+      $$("#musicSeg button").forEach((b) => b.classList.toggle("on", b.dataset.v === "0"));
+    }
     $("#soundBtn").textContent = state.settings.sound ? "🔊" : "🔇";
     saveSettings();
     if (state.settings.sound) Sound.select();
@@ -1525,12 +1654,16 @@ const Game = (() => {
     cv.width = W;
     cv.height = H;
     const c = cv.getContext("2d");
-    const sw = THEME_SWATCH[THEMES[state.themeIndex]] || "#ff7a47";
+    const sw = THEME_SWATCH[THEMES[state.themeIndex]] || "#c3e813";
+    const logo = new Image();
+    logo.onload = logo.onerror = () => paint();
+    logo.src = "assets/logo-mark.png";
 
+    function paint() {
     // خلفية
     const bg = c.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, "#131829");
-    bg.addColorStop(1, "#0c0f1a");
+    bg.addColorStop(0, "#17191e");
+    bg.addColorStop(1, "#0f1013");
     c.fillStyle = bg;
     c.fillRect(0, 0, W, H);
 
@@ -1540,48 +1673,50 @@ const Game = (() => {
     c.strokeRect(40, 40, W - 80, H - 80);
 
     c.textAlign = "center";
+    if (logo.complete && logo.naturalWidth) c.drawImage(logo, W / 2 - 230, 92, 120, 112);
     c.fillStyle = sw;
-    c.font = "900 90px Tajawal, Arial";
-    c.fillText("لَمة", W / 2, 200);
+    c.font = "800 96px 'Baloo Bhaijaan 2', Tajawal, Arial";
+    c.fillText(loc("بايو", "BIO"), W / 2 + 60, 190);
 
-    c.fillStyle = "#aeb4c7";
-    c.font = "700 40px Tajawal, Arial";
-    c.fillText("نتيجة المباراة", W / 2, 270);
+    c.fillStyle = "#bdc0c8";
+    c.font = "600 40px 'IBM Plex Sans Arabic', Tajawal, Arial";
+    c.fillText(loc("نتيجة المباراة", "Match result"), W / 2, 270);
 
     // الفائز
-    let winLine = a.score === b.score ? "🤝 تعادل" : "🏆 " + (a.score > b.score ? a.name : b.name);
-    c.fillStyle = "#ffb46b";
-    c.font = "900 70px Tajawal, Arial";
+    let winLine = a.score === b.score ? loc("🤝 تعادل", "🤝 Draw") : "🏆 " + (a.score > b.score ? a.name : b.name);
+    c.fillStyle = "#f9e09b";
+    c.font = "800 70px 'Baloo Bhaijaan 2', Tajawal, Arial";
     c.fillText(winLine, W / 2, 430);
 
     // الفرق والنقاط
     function teamBox(name, score, color, y) {
-      c.fillStyle = "#1a2138";
+      c.fillStyle = "#1f2228";
       roundRect(c, 140, y, W - 280, 150, 24);
       c.fill();
       c.fillStyle = color;
-      c.font = "800 50px Tajawal, Arial";
+      c.font = "700 50px 'IBM Plex Sans Arabic', Tajawal, Arial";
       c.fillText(name, W / 2, y + 65);
-      c.fillStyle = "#ffb46b";
-      c.font = "900 80px Tajawal, Arial";
+      c.fillStyle = "#f5f2e9";
+      c.font = "800 80px 'Baloo Bhaijaan 2', Tajawal, Arial";
       c.fillText(score, W / 2, y + 135);
     }
-    teamBox(a.name, a.score, "#3aa0ff", 540);
-    teamBox(b.name, b.score, "#ff5d73", 730);
+    teamBox(a.name, a.score, state.teamColors[0] || "#9fe0ec", 540);
+    teamBox(b.name, b.score, state.teamColors[1] || "#e8949d", 730);
 
-    c.fillStyle = "#8a90a8";
-    c.font = "700 34px Tajawal, Arial";
-    c.fillText("العب الآن • لَمة", W / 2, 980);
+    c.fillStyle = "#8d919b";
+    c.font = "600 34px 'IBM Plex Sans Arabic', Tajawal, Arial";
+    c.fillText(loc("بايو · مسابقة علمية بين فريقين", "BIO · a science quiz for two teams"), W / 2, 980);
 
     cv.toBlob((blob) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "lamma-result.png";
+      link.download = "bio-result.png";
       link.click();
       URL.revokeObjectURL(url);
-      toast("📸 تم حفظ صورة النتيجة");
+      toast(loc("📸 تم حفظ صورة النتيجة", "📸 Result image saved"));
     });
+    }
     Sound.select();
   }
 
@@ -1608,7 +1743,8 @@ const Game = (() => {
   // ====================================================
   function init() {
     loadSettings();
-    state.themeIndex = +(localStorage.getItem(LS_THEME) || 0) % THEMES.length;
+    const storedTheme = +(localStorage.getItem(LS_THEME) || 0);
+    state.themeIndex = Number.isInteger(storedTheme) && storedTheme >= 0 ? storedTheme % THEMES.length : 0;
     applyTheme();
     applyMode(localStorage.getItem(LS_MODE) || "dark");
     applyLang(localStorage.getItem(LS_LANG) || "ar");
@@ -1640,7 +1776,7 @@ const Game = (() => {
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        if (state.current) closeQuestion();
+        if (state.current) askClose();
         $$(".modal.active").forEach((m) => {
           if (m.id !== "qModal" && m.id !== "goldenModal") m.classList.remove("active");
         });
@@ -1675,4 +1811,15 @@ const Game = (() => {
   };
 })();
 
-document.addEventListener("DOMContentLoaded", Game.init);
+const bioRulesReady = globalThis.BioRules ? Promise.resolve() : new Promise((resolve, reject) => {
+  const script = document.createElement("script");
+  script.src = new URL("./game-logic.js", document.currentScript?.src || location.href).href;
+  script.onload = resolve;
+  script.onerror = reject;
+  document.head.appendChild(script);
+});
+document.addEventListener("DOMContentLoaded", () => bioRulesReady.then(Game.init).catch(() => {
+  const toast = document.getElementById("toast");
+  toast.textContent = "تعذّر تحميل قواعد اللعبة. أعد الاتصال وحدّث الصفحة.";
+  toast.classList.add("show");
+}));
