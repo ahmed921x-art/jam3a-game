@@ -4,6 +4,7 @@
    =========================================================== */
 
 const FX = (() => {
+  const reducedMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // ---------------- خلفية النجوم المتحركة ----------------
   function starfield(canvasId) {
     const cv = document.getElementById(canvasId);
@@ -49,7 +50,7 @@ const FX = (() => {
         ctx.fill();
       }
       ctx.shadowBlur = 0;
-      requestAnimationFrame(loop);
+      if (!reducedMotion()) requestAnimationFrame(loop);
     }
     loop();
   }
@@ -72,6 +73,7 @@ const FX = (() => {
   const COLORS = ["#ff7a47", "#ffb46b", "#3aa0ff", "#ff5d73", "#34d399", "#ffffff", "#a78bfa"];
 
   function confettiBurst(x, y, amount, power = 1) {
+    if (reducedMotion()) return () => {};
     const cv = makeOverlay();
     const ctx = cv.getContext("2d");
     const parts = [];
@@ -128,6 +130,7 @@ const FX = (() => {
 
   // عرض احتفالي: رشقات متتالية + ألعاب نارية
   function celebrate(duration = 4500) {
+    if (reducedMotion()) return;
     const W = window.innerWidth;
     const H = window.innerHeight;
     // رشقتان من الجانبين

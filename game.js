@@ -300,6 +300,7 @@ const Game = (() => {
     seg.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
+      if (b.dataset.v === "1" && !state.settings.sound) return toast(loc("فعّل الصوت أولاً", "Turn on sound first."));
       $$("#musicSeg button").forEach((x) => x.classList.remove("on"));
       b.classList.add("on");
       Sound.unlock();
@@ -855,6 +856,7 @@ const Game = (() => {
 
   function startPhoneCall() {
     state.ll.left = PHONE_SECONDS;
+    state.ll.endAt = Date.now() + PHONE_SECONDS * 1000;
     $("#llDesc").textContent = loc("عندك دقيقة وحدة تقدر تتصل فيها على شخص ممكن يكون عارف الإجابة", "You have one minute to call a friend.");
     $("#llIcon").hidden = true;
     $("#llRing").hidden = false;
@@ -866,7 +868,7 @@ const Game = (() => {
     paintPhoneRing();
     consumeLifeline();
     state.ll.countId = setInterval(() => {
-      state.ll.left--;
+      state.ll.left = Math.max(0, Math.ceil((state.ll.endAt - Date.now()) / 1000));
       paintPhoneRing();
       if (state.ll.left <= 0) endPhoneCall();
     }, 1000);
@@ -888,6 +890,7 @@ const Game = (() => {
     // استئناف مؤقت السؤال إن كنا ما زلنا على شاشة السؤال
     if (state.current && !state.answerShown) {
       state.timer.paused = false;
+      state.timer.lastTick = Date.now();
       $("#pauseBtn").textContent = "⏸";
     }
   }
@@ -1630,6 +1633,9 @@ const Game = (() => {
   function toggleSound() {
     state.settings.sound = !state.settings.sound;
     Sound.setEnabled(state.settings.sound);
+    if (!state.settings.sound) {
+      $$("#musicSeg button").forEach((b) => b.classList.toggle("on", b.dataset.v === "0"));
+    }
     $("#soundBtn").textContent = state.settings.sound ? "🔊" : "🔇";
     saveSettings();
     if (state.settings.sound) Sound.select();
