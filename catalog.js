@@ -16,8 +16,11 @@ const Catalog = (() => {
   let lastSig = "";
 
   const txt = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+  const DATA_IMG = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
   const safeUrl = (v) => {
-    const s = txt(v, 500);
+    const raw = typeof v === "string" ? v.trim() : "";
+    if (DATA_IMG.test(raw) && raw.length <= 400000) return raw; // صورة مرفوعة من لوحة الأدمن
+    const s = raw.slice(0, 500);
     return /^(https:\/\/|assets\/)[^"'<>\s]+$/i.test(s) ? s : "";
   };
 
