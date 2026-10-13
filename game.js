@@ -320,6 +320,10 @@ const Game = (() => {
     localStorage.setItem(LS_LANG, I18N.lang);
     $("#langBtn").textContent = I18N.lang === "ar" ? "EN" : "ع";
     document.body.dataset.theme = THEMES[state.themeIndex]; // إعادة ضبط بعد تغيير الاتجاه
+    if ($("#catsGrid")) {
+      refreshCategoryFilter();
+      updateCounter();
+    }
   }
   function toggleLang() {
     applyLang(I18N.lang === "ar" ? "en" : "ar");
@@ -546,6 +550,56 @@ const Game = (() => {
     state.selectedCats = state.selectedCats.filter((i) => i < allCats().length);
     refreshTiles();
     updateCounter();
+    refreshCategoryFilter();
+  }
+
+  function categoryGroup(cat, custom) {
+    if (custom) return "custom";
+    if (cat.group && ["bio", "kuwait", "general"].includes(cat.group)) return cat.group;
+    const id = String(cat.id || "");
+    if (id === "kuwait" || id.startsWith("kw-") || id === "gulf-artists") return "kuwait";
+    if (/^(bio|science|animals|body|nature|health|space|inventions)(-|$)/.test(id)) return "bio";
+    return "general";
+  }
+
+  let activeCategoryFilter = "all";
+  function refreshCategoryFilter() {
+    const grid = $("#catsGrid");
+    if (!grid) return;
+    const query = $("#catSearch")?.value.trim().toLocaleLowerCase() || "";
+    const categories = allCats();
+    let visible = 0;
+    grid.querySelectorAll(".cat-tile").forEach((tile) => {
+      const index = Number(tile.dataset.index);
+      const cat = categories[index];
+      const selected = state.selectedCats.includes(index);
+      const group = categoryGroup(cat, index >= CATEGORIES.length);
+      const matchesGroup = activeCategoryFilter === "all" || activeCategoryFilter === group || (activeCategoryFilter === "selected" && selected);
+      const matchesSearch = !query || `${cat.name} ${cat.id || ""}`.toLocaleLowerCase().includes(query);
+      tile.hidden = !(matchesGroup && matchesSearch);
+      tile.style.display = tile.hidden ? "none" : "";
+      if (!tile.hidden) visible++;
+    });
+    const empty = $("#catsEmpty");
+    if (empty) {
+      empty.hidden = visible > 0;
+      if (!visible) empty.textContent = I18N.t(activeCategoryFilter === "custom" && !query ? "cats_empty_custom" : activeCategoryFilter === "selected" && !query ? "cats_empty_selected" : "cats_empty_search");
+    }
+  }
+
+  function bindCategoryFilter() {
+    $("#catSearch")?.addEventListener("input", refreshCategoryFilter);
+    $("#catFilters")?.addEventListener("click", (event) => {
+      const chip = event.target.closest("button[data-group]");
+      if (!chip) return;
+      activeCategoryFilter = chip.dataset.group;
+      $("#catFilters").querySelectorAll("button[data-group]").forEach((button) => {
+        const active = button === chip;
+        button.classList.toggle("on", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+      refreshCategoryFilter();
+    });
   }
 
   function toggleCat(index, tile) {
@@ -574,6 +628,11 @@ const Game = (() => {
     $("#catCounter").textContent = `${state.selectedCats.length} / ${catTarget()}`;
     const b = document.querySelector(".hint b");
     if (b) b.textContent = catTarget();
+    const status = $("#setupStatus");
+    if (status) status.textContent = state.selectedCats.length === catTarget()
+      ? loc("جاهزون! ابدأوا المباراة", "Ready! Start the game")
+      : loc(`اختر ${catTarget() - state.selectedCats.length} فئات أخرى`, `Pick ${catTarget() - state.selectedCats.length} more categories`);
+    refreshCategoryFilter();
   }
 
   // منتقي ألوان الفرق
@@ -1750,6 +1809,7 @@ const Game = (() => {
 
     FX.starfield("starfield");
     buildColorPickers();
+    bindCategoryFilter();
     buildThemePicker();
     bindSettings();
     bindMusic();
