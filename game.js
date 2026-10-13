@@ -16,23 +16,32 @@ const Game = (() => {
     {
       id: "swap",
       label: "تبديل السؤال",
+      labelEn: "Swap question",
       icon: "🔄",
       desc: "مو عاجبكم السؤال؟ بدّلوه بسؤال ثاني من نفس الفئة وبنفس النقاط",
+      descEn: "Replace this question with another of the same value.",
       start: "بدّل السؤال",
+      startEn: "Swap question",
     },
     {
       id: "phone",
       label: "اتصال بصديق",
+      labelEn: "Phone a friend",
       icon: "📞",
       desc: "صديقك اللي يعرف كل شي هذا وقته. دق عليه",
+      descEn: "Call a friend for up to one minute. The question timer pauses.",
       start: "ابدأ",
+      startEn: "Start call",
     },
     {
       id: "two",
       label: "جاوب جوابين",
+      labelEn: "Two answers",
       icon: "✌️",
       desc: "مو متأكدين من الجواب؟ عطوا جوابين بدل جواب واحد — إذا أحدهم صح تنحسب لكم",
+      descEn: "Give two possible answers to this question.",
       start: "فعّل",
+      startEn: "Use lifeline",
     },
   ];
   const PHONE_SECONDS = 60;
@@ -752,10 +761,14 @@ const Game = (() => {
         if (!box) return;
         box.innerHTML = "";
         state.teams[t - 1].lifelines.forEach((l, li) => {
-          const el = document.createElement("span");
+          const el = document.createElement("button");
+          el.type = "button";
           el.className = "lifeline" + (l.used ? " used" : "");
           el.textContent = l.icon;
-          el.title = l.label;
+          const definition = LIFELINES.find((item) => item.id === l.id) || l;
+          el.title = loc(definition.label, definition.labelEn || definition.label);
+          el.setAttribute("aria-label", el.title);
+          el.disabled = l.used;
           el.addEventListener("click", () => useLifeline(t, li));
           box.appendChild(el);
         });
@@ -773,15 +786,15 @@ const Game = (() => {
     if (state.ll) return;
     const def = LIFELINES.find((d) => d.id === l.id) || l;
     state.ll = { team, li, countId: null, left: 0 };
-    $("#llTitle").textContent = l.label;
-    $("#llDesc").textContent = def.desc || "";
+    $("#llTitle").textContent = loc(def.label, def.labelEn || def.label);
+    $("#llDesc").textContent = loc(def.desc || "", def.descEn || def.desc || "");
     $("#llIcon").textContent = l.icon;
     $("#llIcon").hidden = false;
     $("#llRing").hidden = true;
     const startBtn = $("#llStartBtn");
-    startBtn.textContent = def.start || "ابدأ";
+    startBtn.textContent = loc(def.start || "ابدأ", def.startEn || def.start || "Start");
     startBtn.hidden = false;
-    $("#llCancelBtn").textContent = "رجوع";
+    $("#llCancelBtn").textContent = loc("رجوع", "Back");
     $("#qSideTeams").hidden = true;
     $("#llCard").hidden = false;
     Sound.open();
@@ -819,11 +832,11 @@ const Game = (() => {
     }
     if (l.id === "two") {
       const note = $("#qNote");
-      note.textContent = `✌️ ${state.teams[team - 1].name} يحق له جوابين على هذا السؤال`;
+      note.textContent = loc(`✌️ ${state.teams[team - 1].name} يحق له جوابين على هذا السؤال`, `✌️ ${state.teams[team - 1].name} may give two answers.`);
       note.classList.add("show");
       consumeLifeline();
       closeLifelineCard();
-      toast("✌️ جاوب جوابين مفعّلة");
+      toast(loc("✌️ جاوب جوابين مفعّلة", "✌️ Two answers activated."));
       return;
     }
     if (l.id === "phone") startPhoneCall();
@@ -842,11 +855,11 @@ const Game = (() => {
 
   function startPhoneCall() {
     state.ll.left = PHONE_SECONDS;
-    $("#llDesc").textContent = "عندك دقيقة وحدة تقدر تتصل فيها على شخص ممكن يكون عارف الإجابة";
+    $("#llDesc").textContent = loc("عندك دقيقة وحدة تقدر تتصل فيها على شخص ممكن يكون عارف الإجابة", "You have one minute to call a friend.");
     $("#llIcon").hidden = true;
     $("#llRing").hidden = false;
     $("#llStartBtn").hidden = true;
-    $("#llCancelBtn").textContent = "إنهاء المكالمة";
+    $("#llCancelBtn").textContent = loc("إنهاء المكالمة", "End call");
     // يتوقف مؤقت السؤال أثناء المكالمة
     state.timer.paused = true;
     $("#pauseBtn").textContent = "▶";
@@ -871,7 +884,7 @@ const Game = (() => {
   function endPhoneCall() {
     closeLifelineCard();
     Sound.timeout();
-    toast("📞 انتهت المكالمة");
+    toast(loc("📞 انتهت المكالمة", "📞 Call ended."));
     // استئناف مؤقت السؤال إن كنا ما زلنا على شاشة السؤال
     if (state.current && !state.answerShown) {
       state.timer.paused = false;
@@ -885,7 +898,7 @@ const Game = (() => {
     const excluded = new Set([...state.usedQuestions, ...state.cats.flatMap((c) => c.questions.map((q) => BioRules.key(q.q)))]);
     const q = BioRules.replacement(cat, cur.points, excluded);
     if (!q) {
-      toast("ما فيه سؤال بديل لهذه الفئة");
+      toast(loc("ما فيه سؤال بديل لهذه الفئة", "No replacement question is available."));
       return false;
     }
     state.usedQuestions.push(BioRules.key(cat.questions[cur.qi].q));
@@ -897,7 +910,7 @@ const Game = (() => {
     state.timer.elapsed = 0;
     paintTimer();
     saveGame();
-    toast("🔄 تم تبديل السؤال");
+    toast(loc("🔄 تم تبديل السؤال", "🔄 Question swapped."));
     return true;
   }
 
