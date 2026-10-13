@@ -1,11 +1,11 @@
 /* بايو: cache only this GitHub Pages scope; refresh assets online. */
-const CACHE = "bio-v2";
+const CACHE = "bio-v3";
 const ASSETS = [
   "./", "./index.html", "./style.css", "./landing.css",
   "./questions.js", "./questions-extra.js", "./questions-kuwait.js", "./questions-pack2.js",
   "./questions-bio.js",
   "./i18n.js", "./firebase-config.js", "./auth.js", "./sounds.js", "./effects.js",
-  "./game-logic.js", "./game.js", "./bio-ui.js", "./manifest.json", "./icon.svg", "./og-image.svg",
+  "./catalog.js", "./game-logic.js", "./game.js", "./bio-ui.js", "./manifest.json", "./icon.svg", "./og-image.svg",
   "./assets/logo-full.png", "./assets/logo-mark.png", "./assets/favicon-48.png",
   "./assets/icon-192.png", "./assets/icon-512.png", "./assets/icon-maskable-512.png", "./assets/apple-touch-icon.png",
 ];

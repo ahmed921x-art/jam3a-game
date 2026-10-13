@@ -1,0 +1,424 @@
+/* بايو — لوحة الأدمن (تعتمد على رموز style.css) */
+.adm-wrap {
+  padding-top: 20px;
+}
+.adm-tag {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--on-color);
+  background: var(--orchid);
+  border-radius: 999px;
+  padding: 2px 8px;
+  vertical-align: middle;
+}
+.brand-btn {
+  text-decoration: none;
+  color: inherit;
+}
+.adm-user {
+  font-size: 13px;
+  color: var(--text-2);
+  direction: ltr;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .adm-user {
+    display: none;
+  }
+}
+
+/* البوابة */
+.adm-gate {
+  max-width: 460px;
+  margin: 40px auto;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+.adm-gate-logo {
+  width: 120px;
+  height: auto;
+  background: #121317;
+  border-radius: 26px;
+  padding: 10px;
+}
+.btn-google {
+  background: #fff;
+  color: #1f1f1f;
+  border-color: #dadce0;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+.g-logo {
+  width: 20px;
+  height: 20px;
+}
+
+/* التبويبات */
+.adm-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+.adm-tab {
+  flex: none;
+  min-height: 44px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--text-2);
+  font-weight: 600;
+}
+.adm-tab.on {
+  background: var(--text);
+  color: var(--ink-0);
+  border-color: var(--text);
+}
+
+/* الشبكة */
+.adm-grid {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 960px) {
+  .adm-grid {
+    grid-template-columns: 300px 1fr;
+    align-items: start;
+  }
+  .adm-side {
+    position: sticky;
+    top: 84px;
+  }
+}
+.adm-side-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.adm-side-head h2,
+.adm-editor h2 {
+  margin: 0;
+}
+.adm-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.adm-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "ic nm" "ic meta";
+  column-gap: 10px;
+  text-align: start;
+  padding: 8px 10px;
+  min-height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--ink-0);
+  color: var(--text);
+}
+.adm-item.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.ai-ic {
+  grid-area: ic;
+  font-size: 22px;
+  align-self: center;
+}
+.ai-nm {
+  grid-area: nm;
+  font-weight: 700;
+}
+.ai-meta {
+  grid-area: meta;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+/* المحرر */
+.adm-editor h2 {
+  margin-bottom: 14px;
+}
+.adm-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+  margin-bottom: 10px;
+}
+@media (min-width: 640px) {
+  .adm-row {
+    grid-template-columns: 1fr 96px 200px;
+  }
+  .adm-img-row {
+    grid-template-columns: 1fr 76px;
+    align-items: end;
+  }
+}
+.adm-icon input {
+  text-align: center;
+  font-size: 22px;
+}
+.field select {
+  width: 100%;
+  min-height: var(--tap);
+  font-size: 16px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--ink-0);
+  color: var(--text);
+}
+.adm-img-prev {
+  width: 76px;
+  background: var(--surface-2);
+  font-size: 30px;
+  overflow: hidden;
+}
+.adm-img-prev img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.adm-q-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0 8px;
+}
+.adm-q-head h3 {
+  font-size: 18px;
+}
+.adm-tiers {
+  display: flex;
+  gap: 6px;
+  direction: ltr;
+}
+.adm-tiers span {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.adm-tiers .ok {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.adm-tiers .bad {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.adm-qs {
+  display: grid;
+  gap: 8px;
+}
+.adm-q {
+  display: grid;
+  grid-template-columns: 84px 1fr 1fr 40px;
+  gap: 6px;
+  align-items: center;
+}
+.adm-q select,
+.adm-q input {
+  min-height: 44px;
+  font-size: 16px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: var(--ink-0);
+  color: var(--text);
+  width: 100%;
+}
+.adm-q select {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.adm-q input:focus,
+.adm-q select:focus,
+.adm-bi .bi-img:focus,
+.adm-add-admin input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.adm-rm {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--danger);
+  font-weight: 800;
+}
+.adm-rm:hover {
+  background: var(--danger-bg);
+}
+@media (max-width: 640px) {
+  .adm-q {
+    grid-template-columns: 76px 1fr 40px;
+    grid-template-areas: "p q rm" "p a rm";
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .adm-q select { grid-area: p; align-self: stretch; }
+  .adm-q .q { grid-area: q; }
+  .adm-q .a { grid-area: a; }
+  .adm-q .adm-rm { grid-area: rm; }
+}
+.adm-q-add {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.adm-err {
+  color: var(--danger);
+  font-weight: 600;
+  margin-top: 12px;
+}
+.adm-err:empty {
+  display: none;
+}
+.adm-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.adm-danger {
+  color: var(--danger);
+}
+.adm-danger:hover {
+  border-color: var(--danger);
+}
+.adm-import {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--text-2);
+  font-size: 14px;
+}
+.adm-import summary {
+  cursor: pointer;
+  min-height: 36px;
+}
+.adm-import input {
+  margin: 8px 0;
+}
+
+/* الفئات الأساسية */
+.adm-search {
+  margin: 12px 0;
+  max-width: 340px;
+}
+.adm-search input {
+  padding-inline-start: 14px;
+}
+.adm-builtin {
+  display: grid;
+  gap: 6px;
+}
+.adm-bi {
+  display: grid;
+  grid-template-columns: auto 1fr minmax(160px, 280px) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--ink-0);
+}
+.adm-bi.is-off {
+  opacity: 0.55;
+}
+.bi-txt {
+  display: grid;
+  min-width: 0;
+}
+.bi-txt code {
+  font-size: 12px;
+}
+.adm-bi .bi-img {
+  min-height: 40px;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+}
+.bi-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bi-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--lime);
+}
+@media (max-width: 720px) {
+  .adm-bi {
+    grid-template-columns: auto 1fr auto;
+  }
+  .adm-bi .bi-img {
+    grid-column: 1 / -1;
+    order: 4;
+  }
+}
+
+/* المشرفون */
+.adm-sub {
+  font-size: 16px;
+  margin: 16px 0 8px;
+}
+.adm-emails {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.adm-emails li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+}
+.adm-add-admin {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.adm-add-admin input {
+  flex: 1 1 220px;
+  min-height: var(--tap);
+  font-size: 16px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--ink-0);
+  color: var(--text);
+}

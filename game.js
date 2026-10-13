@@ -503,6 +503,14 @@ const Game = (() => {
     return palette[i % palette.length];
   }
 
+  // تُستدعى من catalog.js عندما تتغيّر فئات لوحة الأدمن (تتغير الفهارس، فنلغي الاختيار)
+  function refreshCatalog() {
+    state.selectedCats = [];
+    buildCatPicker();
+    updateLandingStats();
+    buildMarquee();
+  }
+
   function buildCatPicker() {
     const grid = $("#catsGrid");
     grid.innerHTML = "";
@@ -1807,7 +1815,7 @@ const Game = (() => {
     openProfile, closeProfile, openAuth, closeAuth, googleLogin, guest,
     openHelp, closeHelp, shareResult, askClose, restartTimer,
     backToQuestion, openJudge, backToAnswer, lifelineStart, lifelineCancel,
-    goldenShowQuestion, goldenReveal, goldenSetResult, goldenApply,
+    goldenShowQuestion, goldenReveal, goldenSetResult, goldenApply, refreshCatalog,
   };
 })();
 
