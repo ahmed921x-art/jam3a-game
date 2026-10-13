@@ -861,7 +861,8 @@ body[data-mode="light"] .hstat .hs-num { color: var(--text); }
 .ed-item:has(.lock) {
   color: var(--text-3);
 }
-.ed-item > span:first-child {
+.ed-item > span:first-child,
+.ed-item > .ed-edit {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -993,4 +994,22 @@ body[data-mode="light"] .hstat .hs-num { color: var(--text); }
 .io-l {
   color: var(--text-3);
   font-size: 14px;
+}
+
+/* أزرار المحرر (كانت span) */
+.ed-edit {
+  background: none;
+  border: 0;
+  padding: 6px 0;
+  min-height: 36px;
+  text-align: start;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ed-item .del,
+.ed-q .rm {
+  border: 0;
+  background: transparent;
+  font: inherit;
 }

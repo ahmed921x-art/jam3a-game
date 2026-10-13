@@ -65,6 +65,14 @@ const Game = (() => {
     { id: "golden1", icon: "👑", name: "مجازف (لعب الجولة الذهبية)", test: (s) => (s.golden || 0) >= 1 },
   ];
 
+  const ACH_EN = {
+    first: "First game", five: "On fire (5 games)", ten: "Expert (10 games)", fifty: "Legend (50 games)",
+    q100: "100 questions", score3k: "Scorer (3000+)", score5k: "Champion (5000+)", score8k: "Legendary (8000+)",
+    marathon: "Marathoner (25 games)", q500: "500 questions", creator: "Creator (made a category)",
+    polyglot: "Taster (tried 3 themes)", golden1: "Risk taker (played the golden round)",
+  };
+  const achName = (a) => loc(a.name, ACH_EN[a.id] || a.name);
+
   const state = {
     teams: [
       { name: "الفريق الأول", score: 0, lifelines: [] },
@@ -238,7 +246,7 @@ const Game = (() => {
     st.themesUsed = set.size;
     saveStats(st);
     const fresh = checkAchievements();
-    if (fresh.length) toast(`🏅 إنجاز جديد: ${fresh[0].name}`);
+    if (fresh.length) toast(loc("🏅 إنجاز جديد: ", "🏅 New achievement: ") + achName(fresh[0]));
   }
   // الوضع الفاتح / الغامق (زر التبديل في هيدر اللعبة — مثل سين جيم)
   function applyMode(m) {
@@ -399,8 +407,8 @@ const Game = (() => {
       const el = document.createElement("span");
       const got = have.has(a.id);
       el.className = "badge" + (got ? " got" : "");
-      el.title = a.name;
-      el.innerHTML = `<span class="b-ic">${a.icon}</span><span class="b-nm">${a.name}</span>`;
+      el.title = achName(a);
+      el.innerHTML = `<span class="b-ic">${a.icon}</span><span class="b-nm">${escapeHTML(achName(a))}</span>`;
       box.appendChild(el);
     });
   }
@@ -651,7 +659,7 @@ const Game = (() => {
       b.classList.toggle("on", (b.dataset.v === "1") === !!state.settings.golden)
     );
     Sound.setEnabled(state.settings.sound);
-    $("#soundBtn").textContent = state.settings.sound ? "🔊" : "🔇";
+    setSoundIcon();
   }
 
   // ====================================================
@@ -867,7 +875,7 @@ const Game = (() => {
     $("#llCancelBtn").textContent = loc("إنهاء المكالمة", "End call");
     // يتوقف مؤقت السؤال أثناء المكالمة
     state.timer.paused = true;
-    $("#pauseBtn").textContent = "▶";
+    setPauseIcon(true);
     paintPhoneRing();
     consumeLifeline();
     state.ll.countId = setInterval(() => {
@@ -894,7 +902,7 @@ const Game = (() => {
     if (state.current && !state.answerShown) {
       state.timer.paused = false;
       state.timer.lastTick = Date.now();
-      $("#pauseBtn").textContent = "⏸";
+      setPauseIcon(false);
     }
   }
 
@@ -1065,7 +1073,7 @@ const Game = (() => {
     state.timer.elapsed = elapsed;
     state.timer.paused = paused;
     state.timer.lastTick = Date.now();
-    $("#pauseBtn").textContent = paused ? "▶" : "⏸";
+    setPauseIcon(paused);
     paintTimer();
     state.timer.id = setInterval(() => {
       const next = BioRules.advanceTimer(state.timer.elapsed, state.timer.lastTick, Date.now(), state.timer.paused);
@@ -1087,7 +1095,7 @@ const Game = (() => {
     if (!state.current || state.answerShown) return;
     state.timer.paused = !state.timer.paused;
     state.timer.lastTick = Date.now();
-    $("#pauseBtn").textContent = state.timer.paused ? "▶" : "⏸";
+    setPauseIcon(state.timer.paused);
     saveGame();
     Sound.click();
   }
@@ -1098,7 +1106,7 @@ const Game = (() => {
     state.answerShown = true;
     state.timer.paused = true;
     closeLifelineCard();
-    $("#pauseBtn").textContent = "▶";
+    setPauseIcon(true);
     setView("a");
     saveGame();
     Sound.select();
@@ -1109,7 +1117,7 @@ const Game = (() => {
     setView("q");
     state.timer.paused = false;
     state.timer.lastTick = Date.now();
-    $("#pauseBtn").textContent = "⏸";
+    setPauseIcon(false);
     saveGame();
     Sound.click();
   }
@@ -1404,7 +1412,7 @@ const Game = (() => {
     // الإنجازات الجديدة
     const fresh = checkAchievements();
     if (fresh.length) {
-      setTimeout(() => toast(`🏅 إنجاز جديد: ${fresh[0].name}`), 1400);
+      setTimeout(() => toast(loc("🏅 إنجاز جديد: ", "🏅 New achievement: ") + achName(fresh[0])), 1400);
     }
 
     show("result");
@@ -1527,11 +1535,11 @@ const Game = (() => {
     customCats.forEach((c, i) => {
       const it = document.createElement("div");
       it.className = "ed-item";
-      it.innerHTML = `<span>${escapeHTML(c.icon)} ${escapeHTML(c.name)}</span><span class="del">🗑</span>`;
-      it.querySelector("span").addEventListener("click", () => loadIntoForm(i));
+      it.innerHTML = `<button type="button" class="ed-edit">${escapeHTML(c.icon)} ${escapeHTML(c.name)}</button><button type="button" class="del" aria-label="${escapeHTML(loc("حذف", "Delete"))} ${escapeHTML(c.name)}">🗑</button>`;
+      it.querySelector(".ed-edit").addEventListener("click", () => loadIntoForm(i));
       it.querySelector(".del").addEventListener("click", (e) => {
         e.stopPropagation();
-        if (confirm(`حذف "${c.name}"؟`)) {
+        if (confirm(loc(`حذف "${c.name}"؟`, `Delete "${c.name}"?`))) {
           customCats.splice(i, 1);
           saveCustom();
           renderEditorList();
@@ -1561,9 +1569,9 @@ const Game = (() => {
     row.className = "ed-q";
     row.innerHTML = `
       <select><option value="200">200</option><option value="400">400</option><option value="600">600</option></select>
-      <input class="q" type="text" placeholder="السؤال" />
-      <input class="a" type="text" placeholder="الإجابة" />
-      <span class="rm">✕</span>`;
+      <input class="q" type="text" placeholder="${escapeHTML(loc("السؤال", "Question"))}" />
+      <input class="a" type="text" placeholder="${escapeHTML(loc("الإجابة", "Answer"))}" />
+      <button type="button" class="rm" aria-label="${escapeHTML(loc("حذف السؤال", "Remove question"))}">✕</button>`;
     row.querySelector("select").value = points;
     row.querySelector(".q").value = q;
     row.querySelector(".a").value = a;
@@ -1639,18 +1647,32 @@ const Game = (() => {
     if (!state.settings.sound) {
       $$("#musicSeg button").forEach((b) => b.classList.toggle("on", b.dataset.v === "0"));
     }
-    $("#soundBtn").textContent = state.settings.sound ? "🔊" : "🔇";
+    setSoundIcon();
     saveSettings();
     if (state.settings.sound) Sound.select();
   }
   function toggleFullscreen() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.();
-      $("#fsBtn").textContent = "🗗";
     } else {
       document.exitFullscreen?.();
-      $("#fsBtn").textContent = "⛶";
     }
+  }
+  // أيقونات SVG + aria-pressed بدل كتابة إيموجي في الزر
+  function iconBtn(sel, icon, pressed) {
+    const b = $(sel);
+    if (!b) return;
+    b.innerHTML = `<svg class="ic"><use href="#${icon}" /></svg>`;
+    b.setAttribute("aria-pressed", pressed ? "true" : "false");
+  }
+  function setPauseIcon(paused) {
+    iconBtn("#pauseBtn", paused ? "i-play" : "i-pause", paused);
+  }
+  function setSoundIcon() {
+    iconBtn("#soundBtn", state.settings.sound ? "i-sound" : "i-mute", !state.settings.sound);
+  }
+  function setFsIcon() {
+    iconBtn("#fsBtn", document.fullscreenElement ? "i-shrink" : "i-expand", !!document.fullscreenElement);
   }
 
   // حفظ صورة النتيجة (canvas → تنزيل)
@@ -1763,6 +1785,9 @@ const Game = (() => {
     bindSettings();
     bindMusic();
     applySettingsToUI();
+    setPauseIcon(false);
+    setFsIcon();
+    document.addEventListener("fullscreenchange", setFsIcon);
     buildMarquee();
 
     Auth.onChange(onUserChange);

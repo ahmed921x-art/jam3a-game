@@ -57,6 +57,11 @@
       <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" /></symbol>
       <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" /></symbol>
       <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" /></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8.5 5.5v13M15.5 5.5v13" /></symbol>
+      <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /></symbol>
+      <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path d="M16 9.5l5 5M21 9.5l-5 5" /></symbol>
+      <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></symbol>
+      <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></symbol>
       <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z" /></symbol>
     </svg>
 
@@ -74,8 +79,8 @@
       <div class="topbar-actions">
         <button class="chip-btn" id="langBtn" type="button" aria-label="English / عربي" onclick="Game.toggleLang()">EN</button>
         <button class="icon-btn" id="helpBtn" type="button" title="طريقة اللعب" aria-label="طريقة اللعب" data-i18n-aria="help_aria" data-i18n-title="help_aria" onclick="Game.openHelp()"><svg class="ic"><use href="#i-help" /></svg></button>
-        <button class="icon-btn" id="soundBtn" type="button" title="الصوت" aria-label="تشغيل أو إيقاف الصوت" data-i18n-aria="sound_aria" onclick="Game.toggleSound()">🔊</button>
-        <button class="icon-btn hide-sm" id="fsBtn" type="button" title="ملء الشاشة" aria-label="ملء الشاشة" data-i18n-aria="fs_aria" onclick="Game.toggleFullscreen()">⛶</button>
+        <button class="icon-btn" id="soundBtn" type="button" title="الصوت" aria-label="تشغيل أو إيقاف الصوت" data-i18n-aria="sound_aria" aria-pressed="false" onclick="Game.toggleSound()"><svg class="ic"><use href="#i-sound" /></svg></button>
+        <button class="icon-btn hide-sm" id="fsBtn" type="button" title="ملء الشاشة" aria-label="ملء الشاشة" data-i18n-aria="fs_aria" aria-pressed="false" onclick="Game.toggleFullscreen()"><svg class="ic"><use href="#i-expand" /></svg></button>
         <button class="profile-chip" id="profileChip" type="button" aria-label="الحساب والملف الشخصي" data-i18n-aria="profile_aria" onclick="Game.openProfile()">
           <span class="pc-avatar" id="pcAvatar">👤</span>
           <span class="pc-name" id="pcName">دخول</span>
@@ -372,7 +377,7 @@
             <div class="q-top">
               <span class="q-cat-badge" id="qCat">الفئة</span>
               <div class="timer-pill" role="group" aria-label="المؤقت" data-i18n-aria="timer_aria">
-                <button id="pauseBtn" class="tp-btn" type="button" onclick="Game.togglePause()" title="إيقاف / متابعة" aria-label="إيقاف المؤقت أو متابعته" data-i18n-aria="pause_aria">⏸</button>
+                <button id="pauseBtn" class="tp-btn" type="button" onclick="Game.togglePause()" title="إيقاف / متابعة" aria-label="إيقاف المؤقت أو متابعته" data-i18n-aria="pause_aria" aria-pressed="false"><svg class="ic"><use href="#i-pause" /></svg></button>
                 <span class="timer" id="timer" role="timer">00:00</span>
                 <button class="tp-btn" type="button" onclick="Game.restartTimer()" title="تصفير المؤقت" aria-label="تصفير المؤقت" data-i18n-aria="reset_aria"><svg class="ic"><use href="#i-reset" /></svg></button>
               </div>
