@@ -83,6 +83,28 @@ CATEGORIES.push(
   }
 );
 
+CATEGORIES.push({
+  id: "biotech",
+  name: "BioTechnology",
+  icon: "🧪",
+  questions: [
+    { points: 200, q: "What is biotechnology?", a: "Using living organisms (or their parts) to make useful products" },
+    { points: 200, q: "What is insulin used to treat?", a: "Diabetes" },
+    { points: 200, q: "Which biotechnology field focuses on developing medicines?", a: "Medical biotechnology" },
+    { points: 200, q: "Which biotechnology field focuses on improving crops?", a: "Agricultural biotechnology" },
+    { points: 200, q: "What is one example of biotechnology in food production?", a: "Making yogurt" },
+    { points: 400, q: "What is CRISPR used for?", a: "Editing DNA" },
+    { points: 400, q: "What is the process of making RNA from DNA?", a: "Transcription" },
+    { points: 400, q: "What is a plasmid?", a: "A small circular DNA molecule (found in bacteria)" },
+    { points: 400, q: "What does PCR stand for?", a: "Polymerase Chain Reaction" },
+    { points: 400, q: "What is environmental biotechnology used for?", a: "Reducing pollution and treating waste" },
+    { points: 600, q: "What are the three main steps of PCR?", a: "Denaturation, annealing, extension" },
+    { points: 600, q: "What stain is commonly used to visualize DNA in gels?", a: "Ethidium bromide (or GelRed)" },
+    { points: 600, q: "What does DNA stand for?", a: "Deoxyribonucleic acid" },
+    { points: 600, q: "What are the main fields of biotechnology?", a: "Medical, agricultural, industrial, and environmental biotechnology" },
+  ],
+});
+
 /* ---------- صور الفئات ----------
    ضع الصورة في مجلد assets/categories/ ثم اكتب اسم ملفها أمام معرّف الفئة.
    مثال:  cell: "cell.webp",
@@ -95,7 +117,7 @@ const CATEGORY_IMAGES = {
 
 /* ---------- تصنيف الفئات للمنتقي (بحث/تصفية في bio-ui.js) ---------- */
 (() => {
-  const BIO = ["cell", "genetics", "microbes", "ecology", "science", "body", "animals", "nature", "health", "space", "inventions"];
+  const BIO = ["cell", "genetics", "microbes", "biotech", "ecology", "science", "body", "animals", "nature", "health", "space", "inventions"];
   const KUWAIT = ["kuwait", "kw-history", "kw-food", "kw-proverbs", "kw-dialect", "kw-places", "gulf-artists"];
   CATEGORIES.forEach((c) => {
     if (CATEGORY_IMAGES[c.id]) c.img = "assets/categories/" + CATEGORY_IMAGES[c.id];
