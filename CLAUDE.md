@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-"لَمة" (Lamma, formerly جمعة/jam3a — repo and Firebase ids keep the jam3a name) — Arabic RTL two-team trivia party game (host-judged, like seenjeem). Fully static site: vanilla HTML/CSS/JS, no build step, no dependencies, no backend. Deployed via GitHub Pages from `main` (https://ahmed921x-art.github.io/jam3a-game/). Installable PWA with offline support.
+"بايو" (BIO; formerly لَمة/Lamma and جمعة/jam3a — repo and Firebase ids keep the jam3a name) — Arabic RTL (+ English LTR UI) two-team science/trivia party game (host-judged, like seenjeem). Brand = the Biological Sciences Club logo in `assets/logo.png` (white text → always shown on a dark plate). Fully static site: vanilla HTML/CSS/JS, no build step, no dependencies, no backend. Deployed via GitHub Pages from `main` (https://ahmed921x-art.github.io/jam3a-game/). Installable PWA with offline support.
 
 ## Commands
 
@@ -16,7 +16,7 @@ python -m http.server 8765   # then open http://localhost:8765
 node --check game.js
 
 # Validate question data integrity (counts, per-tier coverage, duplicate questions)
-node -e "const fs=require('fs');let s=['questions.js','questions-extra.js','questions-kuwait.js','questions-pack2.js'].map(f=>fs.readFileSync(f,'utf8')).join('\n').replace('const CATEGORIES','var CATEGORIES');eval(s);console.log(CATEGORIES.length+' cats, '+CATEGORIES.reduce((n,c)=>n+c.questions.length,0)+' questions')"
+node -e "const fs=require('fs');let s=['questions.js','questions-extra.js','questions-kuwait.js','questions-pack2.js','questions-bio.js'].map(f=>fs.readFileSync(f,'utf8')).join('\n').replace('const CATEGORIES','var CATEGORIES');eval(s);console.log(CATEGORIES.length+' cats, '+CATEGORIES.reduce((n,c)=>n+c.questions.length,0)+' questions')"
 ```
 
 Pushing to `main` deploys to production immediately.
@@ -26,16 +26,21 @@ Pushing to `main` deploys to production immediately.
 All scripts are plain IIFE modules attached as globals, loaded in a strict order set in `index.html` (bottom of body):
 
 ```
-questions.js → questions-extra.js → questions-kuwait.js → questions-pack2.js
-→ i18n.js → auth.js → sounds.js → effects.js → game.js
+questions.js → questions-extra.js → questions-kuwait.js → questions-pack2.js → questions-bio.js
+→ i18n.js → auth.js → sounds.js → effects.js → game.js → bio-ui.js
 ```
 
 - **`questions.js`** declares `const CATEGORIES = [...]` (the base packs). The other three question files **extend it via `CATEGORIES.push(...)`**, so they must load after it and before `game.js`. Each category: `{ id, name, icon, img?, questions: [{ points: 200|400|600, q, a, img?, aImg? }] }` with **at least 2 questions per point tier** (the game picks 2 per tier per board). `img`/`aImg` are optional image URLs (category card, question image, answer image) — rendered when present, icon/text-only otherwise. Run the validation one-liner above after touching question files; also watch for duplicate questions across categories (same question in two categories can appear twice in one game).
 - **`game.js`** — single `Game` IIFE holding all game state (`state` object) and screen logic. Screens are `<section class="screen">` elements toggled with `.active`; modals are `.modal` divs toggled with `.active`. HTML calls into it via `onclick="Game.xxx()"`, so any new handler must be exported in the `return {...}` block at the bottom. `state.answerShown` is the single source of truth for whether the current answer is revealed (do not re-check DOM classes).
 - **`auth.js`** — Firebase Auth (Google sign-in + guest mode) behind the original synchronous surface (`Auth.current()`, `Auth.key()`, `Auth.onChange()`). Firebase project: `jam3a-game` (config in `firebase-config.js`, compat SDK from CDN — no build step). Per-user storage keys come from `Auth.key(base)` → `sj_u_<uid>_<base>`; game.js `uWrite` writes localStorage first then `Auth.cloudSet()` debounce-syncs stats/history/custom/ach to Firestore `users/{uid}` (guest = local only). On login, cloud data wins; missing fields are uploaded from local. Security rules in `firestore.rules` (deploy: `firebase deploy --only firestore:rules`).
-- **`i18n.js`** — `I18N` dictionary (ar/en). Static UI text uses `data-i18n` attributes; dynamic strings built in game.js are Arabic-only. New static labels need keys in **both** languages.
+- **`questions-bio.js`** must load **last** among question files: it pushes the biology packs, sets `group` (`bio`/`kuwait`/`general`) on every category, and sorts `CATEGORIES` (bio first). Content sources/human-review list: `CONTENT-REVIEW.md`.
+- **`i18n.js`** — `I18N` dictionary (ar/en). `I18N.t(key, vars)` fills `{placeholders}`. Static UI uses `data-i18n` (text only — it replaces textContent), `data-i18n-ph`, `data-i18n-aria`, `data-i18n-title`, `data-i18n-alt`; fires `i18n:change`. Dynamic strings built in game.js are still Arabic-only — ready-made `js_*` keys exist for them. New static labels need keys in **both** languages.
+- **`bio-ui.js`** — presentation-only layer (never mutates game state, never calls `Game.*`): category search/filter (`#catSearch`, `#catFilters`, `.cat-tile[data-group]`), setup start bar (`#setupStatus`, parses `#catCounter` "x / y"), theme labels, golden-round wager chips/steps, modal focus trap/restore, achievements count, editor empty state. It observes DOM that game.js renders — keep those class names in sync.
+- **Design system** — tokens at the top of `style.css` (logo colors, ink surfaces, `--accent` per theme, `body[data-mode="light"]`). Surface tokens (`--surface`, `--surface-2`) are declared on `body`, not `:root`, so light mode can override them. `landing.css` holds landing/result/auth/profile/help/editor. Note: `updateCounter()` writes into the first `.hint b` in the document — keep `#catsHint` first.
 - **`sounds.js`** (`Sound`, Web Audio synth — no audio files), **`effects.js`** (`FX`, starfield/confetti canvas).
 - **`sw.js`** — precache list `ASSETS` + cache-first fetch. **Any new file must be added to `ASSETS`, and `CACHE` must be bumped (`jam3a-vN`) on every release**, otherwise installed PWAs keep serving stale code.
+
+Pending for release (see `HANDOFF-CODEX.md`): bump `CACHE` and add `bio-ui.js`, `questions-bio.js`, `assets/*` to `sw.js`; apply `handoff/game-js-bio.patch` (team/theme colors, accessible lifeline buttons, BIO share image).
 
 Legacy note: localStorage keys and the password-hash salt still use the `sj_`/seenjeem prefix from the project this was forked from. Do not "clean these up" — renaming them wipes existing users' accounts, stats, and custom categories.
 

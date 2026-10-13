@@ -2,197 +2,291 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>لَمة — لعبة المسابقات الأولى</title>
-    <meta name="description" content="لَمة — لعبة مسابقات عربية احترافية بين فريقين، فئات وأسئلة ونقاط، تسجيل دخول وحساب وإحصائيات." />
-    <meta name="theme-color" content="#0e0a14" />
-    <meta property="og:title" content="لَمة — لعبة المسابقات" />
-    <meta property="og:description" content="فريقان، فئات لا تنتهي، وتحدٍّ لا يُنسى." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>بايو — مسابقة علمية بين فريقين</title>
+    <meta name="description" content="بايو: لعبة مسابقات جماعية بين فريقين بأسئلة في الأحياء والعلوم والمعلومات العامة، مع وسائل مساعدة وجولة ذهبية ومحرر لأسئلتك." />
+    <meta name="application-name" content="بايو" />
+    <meta name="apple-mobile-web-app-title" content="بايو" />
+    <meta name="theme-color" content="#0f1013" />
+    <meta name="color-scheme" content="dark light" />
+
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="og-image.svg" />
+    <meta property="og:site_name" content="بايو" />
+    <meta property="og:locale" content="ar_KW" />
+    <meta property="og:url" content="https://ahmed921x-art.github.io/jam3a-game/" />
+    <meta property="og:title" content="بايو — مسابقة علمية بين فريقين" />
+    <meta property="og:description" content="فريقان، فئات في الأحياء والعلوم والمعلومات العامة، ووسائل مساعدة وجولة ذهبية. العبوها مع الأصدقاء على شاشة واحدة." />
+    <meta property="og:image" content="https://ahmed921x-art.github.io/jam3a-game/assets/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="شعار بايو مع عبارة: مسابقة علمية بين فريقين" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="og-image.svg" />
-    <link rel="icon" href="icon.svg" />
+    <meta name="twitter:title" content="بايو — مسابقة علمية بين فريقين" />
+    <meta name="twitter:description" content="فئات في الأحياء والعلوم والمعلومات العامة، ووسائل مساعدة وجولة ذهبية." />
+    <meta name="twitter:image" content="https://ahmed921x-art.github.io/jam3a-game/assets/og-image.png" />
+
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="manifest" href="manifest.json" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="landing.css" />
   </head>
   <body data-theme="royal">
-    <canvas id="starfield"></canvas>
-    <div class="aurora"></div>
+    <!-- أيقونات الواجهة (SVG sprite) -->
+    <svg class="sprite" aria-hidden="true" focusable="false">
+      <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.8v.5" /><path d="M12 17.2v.1" /></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" /></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4h11l-2 4 2 4H5" /></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" /><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" /></symbol>
+      <symbol id="i-exit" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 8l-4 4 4 4M6 12h10" /></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 16V5M7 10l5-5 5 5M5 20h14" /></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z" /></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.2-4.2" /></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4h4" /></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" /></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" /></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" /></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z" /></symbol>
+    </svg>
 
-    <!-- شريط علوي -->
+    <a class="skip-link" href="#main" data-i18n="skip">تخطَّ إلى المحتوى</a>
+
+    <canvas id="starfield" aria-hidden="true"></canvas>
+    <div class="aurora" aria-hidden="true"></div>
+
+    <!-- الشريط العلوي -->
     <header class="topbar">
-      <div class="logo-mini" onclick="Game.goLanding()">لَمة</div>
+      <button class="brand-btn" type="button" onclick="Game.goLanding()" aria-label="بايو — الصفحة الرئيسية" data-i18n-aria="home_aria">
+        <img class="brand-mark" src="assets/logo-mark.png" alt="" width="336" height="313" />
+        <span class="brand-word" data-i18n="brand">بايو</span>
+      </button>
       <div class="topbar-actions">
-        <button class="chip-btn" id="langBtn" aria-label="تغيير اللغة" onclick="Game.toggleLang()">EN</button>
-        <button class="icon-btn" id="helpBtn" title="كيف ألعب" aria-label="كيف ألعب" onclick="Game.openHelp()">❓</button>
-        <button class="icon-btn" id="themeBtn" title="الثيم" aria-label="تغيير الثيم" onclick="Game.cycleTheme()">🎨</button>
-        <button class="icon-btn" id="soundBtn" title="الصوت" aria-label="تشغيل/إيقاف الصوت" onclick="Game.toggleSound()">🔊</button>
-        <button class="icon-btn" id="fsBtn" title="ملء الشاشة" aria-label="ملء الشاشة" onclick="Game.toggleFullscreen()">⛶</button>
-        <button class="profile-chip" id="profileChip" aria-label="الملف الشخصي" onclick="Game.openProfile()">
+        <button class="chip-btn" id="langBtn" type="button" aria-label="English / عربي" onclick="Game.toggleLang()">EN</button>
+        <button class="icon-btn" id="helpBtn" type="button" title="طريقة اللعب" aria-label="طريقة اللعب" data-i18n-aria="help_aria" data-i18n-title="help_aria" onclick="Game.openHelp()"><svg class="ic"><use href="#i-help" /></svg></button>
+        <button class="icon-btn" id="soundBtn" type="button" title="الصوت" aria-label="تشغيل أو إيقاف الصوت" data-i18n-aria="sound_aria" onclick="Game.toggleSound()">🔊</button>
+        <button class="icon-btn hide-sm" id="fsBtn" type="button" title="ملء الشاشة" aria-label="ملء الشاشة" data-i18n-aria="fs_aria" onclick="Game.toggleFullscreen()">⛶</button>
+        <button class="profile-chip" id="profileChip" type="button" aria-label="الحساب والملف الشخصي" data-i18n-aria="profile_aria" onclick="Game.openProfile()">
           <span class="pc-avatar" id="pcAvatar">👤</span>
           <span class="pc-name" id="pcName">دخول</span>
         </button>
       </div>
     </header>
 
-    <div class="wrap">
-      <!-- ============ صفحة الهبوط ============ -->
-      <section id="landingScreen" class="screen active">
+    <main class="wrap" id="main" tabindex="-1">
+      <!-- ============ صفحة البداية ============ -->
+      <section id="landingScreen" class="screen active" aria-labelledby="heroTitle">
         <div class="hero">
-          <div class="hero-badge">⭐ النسخة الاحترافية</div>
-          <h1 class="glow-title hero-title">لَمة</h1>
-          <p class="hero-tagline" data-i18n="tagline">لعبة المسابقات رقم ١ — فريقان، فئات، وتحدٍّ لا يُنسى</p>
-          <p class="hero-sub" data-i18n="hero_sub">اختر فئاتك، اجمع فريقك، وابدأ معركة المعلومات بأجواء احترافية.</p>
-          <div class="hero-cta">
-            <button class="btn btn-gold btn-lg pulse" data-i18n="play_now" onclick="Game.playClick()">ابدأ اللعب الآن 🚀</button>
-            <a href="#how" class="btn btn-ghost btn-lg" data-i18n="how_play">كيف تلعب؟</a>
+          <div class="hero-art">
+            <div class="hero-logo-plate">
+              <img src="assets/logo-full.png" width="414" height="417" alt="شعار بايو: خلايا سداسية فيها حمض نووي وورقة نبات وجزيء وسلحفاة وميكروب، مع عبارة Biological Sciences Club – Kuwait University" data-i18n-alt="logo_alt" />
+            </div>
           </div>
-
-          <div class="hero-stats">
-            <div class="hstat"><span class="hs-num" id="statCats">0</span><span class="hs-lbl" data-i18n="stat_cats">فئة</span></div>
-            <div class="hstat"><span class="hs-num" id="statQ">0</span><span class="hs-lbl" data-i18n="stat_q">سؤال</span></div>
-            <div class="hstat"><span class="hs-num" id="statGames">0</span><span class="hs-lbl" data-i18n="stat_games">لعبة لُعبت</span></div>
+          <div class="hero-copy">
+            <p class="eyebrow" data-i18n="eyebrow">مسابقة جماعية • فريقان • شاشة واحدة</p>
+            <h1 class="hero-title" id="heroTitle"><span class="ht-ar">بايو</span><span class="ht-en" lang="en">BIO</span></h1>
+            <p class="hero-tagline" data-i18n="tagline">من الخلية إلى المجرّة: أسئلة في الأحياء والعلوم والمعلومات العامة، وفريقكم يجمع النقاط.</p>
+            <div class="hero-cta">
+              <button class="btn btn-gold btn-lg" type="button" onclick="Game.playClick()">
+                <svg class="ic"><use href="#i-play" /></svg><span data-i18n="play_now">ابدأ لعبة جديدة</span>
+              </button>
+              <button class="btn btn-ghost btn-lg" type="button" onclick="Game.openHelp()"><span data-i18n="how_play">طريقة اللعب</span></button>
+            </div>
+            <dl class="hero-stats">
+              <div class="hstat"><dt class="hs-lbl" data-i18n="stat_cats">فئة</dt><dd class="hs-num" id="statCats">0</dd></div>
+              <div class="hstat"><dt class="hs-lbl" data-i18n="stat_q">سؤال</dt><dd class="hs-num" id="statQ">0</dd></div>
+              <div class="hstat"><dt class="hs-lbl" data-i18n="stat_games">لعبة لعبتها</dt><dd class="hs-num" id="statGames">0</dd></div>
+            </dl>
           </div>
         </div>
 
-        <!-- شريط فئات متحرك -->
-        <div class="cat-marquee"><div class="cm-track" id="cmTrack"></div></div>
+        <!-- شريط الفئات -->
+        <div class="cat-marquee" aria-hidden="true"><div class="cm-track" id="cmTrack"></div></div>
 
-        <!-- المميزات -->
-        <h2 class="section-h" data-i18n="feat_title">ليش لَمة؟</h2>
+        <!-- طريقة اللعب باختصار -->
+        <h2 class="section-h" id="how" data-i18n="how_title">كيف تمشي اللعبة؟</h2>
+        <ol class="steps">
+          <li class="step"><span class="step-n hex hex-cream">1</span><div><h3 data-i18n="step1_t">سمّوا الفريقين</h3><p data-i18n="step1">اكتبوا اسم كل فريق واختاروا لونه.</p></div></li>
+          <li class="step"><span class="step-n hex hex-lime">2</span><div><h3 data-i18n="step2_t">اختاروا الفئات</h3><p data-i18n="step2">من 4 إلى 6 فئات: أحياء، علوم، الكويت، وغيرها.</p></div></li>
+          <li class="step"><span class="step-n hex hex-aqua">3</span><div><h3 data-i18n="step3_t">جاوبوا بالدور</h3><p data-i18n="step3">الفريق صاحب الدور يختار سؤالاً بقيمة 200 أو 400 أو 600.</p></div></li>
+          <li class="step"><span class="step-n hex hex-rose">4</span><div><h3 data-i18n="step4_t">اجمعوا النقاط</h3><p data-i18n="step4">المقدّم يحكم، والأعلى نقاطاً في النهاية يفوز.</p></div></li>
+        </ol>
+
+        <h2 class="section-h" data-i18n="feat_title">ليش بايو؟</h2>
         <div class="features">
-          <div class="feature"><div class="fic">♾️</div><h3 data-i18n="f1_t">فئات لا تنتهي</h3><p data-i18n="f1_d">عشرات الفئات وأسئلة عشوائية تتجدد كل لعبة.</p></div>
-          <div class="feature"><div class="fic">✏️</div><h3 data-i18n="f2_t">محرر خاص</h3><p data-i18n="f2_d">أضف فئاتك وأسئلتك واحفظها وشاركها.</p></div>
-          <div class="feature"><div class="fic">🎉</div><h3 data-i18n="f3_t">أجواء احترافية</h3><p data-i18n="f3_d">أصوات، مؤثرات، كونفيتي، وتصميم عالمي.</p></div>
-          <div class="feature"><div class="fic">📱</div><h3 data-i18n="f4_t">يعمل بدون نت</h3><p data-i18n="f4_d">ثبّتها كتطبيق والعب في أي مكان.</p></div>
+          <article class="feature f-lime"><div class="fic hex">🧬</div><h3 data-i18n="f1_t">علوم بنكهة مرحة</h3><p data-i18n="f1_d">فئات للخلية والوراثة والأحياء الدقيقة والبيئة، بجانب فئات عامة وكويتية.</p></article>
+          <article class="feature f-aqua"><div class="fic hex">🛟</div><h3 data-i18n="f2_t">وسائل مساعدة</h3><p data-i18n="f2_d">لكل فريق: تبديل السؤال، واتصال بصديق، وجوابان بدل جواب.</p></article>
+          <article class="feature f-cream"><div class="fic hex">👑</div><h3 data-i18n="f3_t">جولة ذهبية</h3><p data-i18n="f3_d">رهان على سؤال أخير يقلب النتيجة، وشوط فاصل عند التعادل.</p></article>
+          <article class="feature f-orchid"><div class="fic hex">✏️</div><h3 data-i18n="f4_t">أسئلتك أنت</h3><p data-i18n="f4_d">أنشئ فئاتك الخاصة واحفظها، وصدّرها لتشاركها مع غيرك.</p></article>
         </div>
 
-        <!-- كيف تلعب -->
-        <h2 class="section-h" id="how" data-i18n="how_play">كيف تلعب؟</h2>
-        <div class="steps">
-          <div class="step"><span class="step-n">1</span><p data-i18n="step1">اختر فريقين وسمّهما</p></div>
-          <div class="step"><span class="step-n">2</span><p data-i18n="step2">اختر 6 فئات</p></div>
-          <div class="step"><span class="step-n">3</span><p data-i18n="step3">جاوب واجمع النقاط</p></div>
-          <div class="step"><span class="step-n">4</span><p data-i18n="step4">الأعلى نقاطاً يفوز 🏆</p></div>
+        <div class="cta-band">
+          <div>
+            <h2 data-i18n="cta_h">جاهزين للتحدي؟</h2>
+            <p data-i18n="cta_p">تكفي شاشة واحدة ومقدّم يقرأ الأسئلة. يمكن تثبيت اللعبة كتطبيق على الجوال.</p>
+          </div>
+          <button class="btn btn-gold btn-lg" type="button" onclick="Game.playClick()"><svg class="ic"><use href="#i-play" /></svg><span data-i18n="play_now">ابدأ لعبة جديدة</span></button>
         </div>
 
-        <div class="hero-cta center">
-          <button class="btn btn-gold btn-lg" data-i18n="play_now" onclick="Game.playClick()">ابدأ اللعب الآن 🚀</button>
-        </div>
-
-        <footer class="footer"><span data-i18n="footer">صُنع بشغف لعشاق التحدي</span> • لَمة © 2026</footer>
+        <footer class="footer"><span>بايو · BIO</span> <span aria-hidden="true">•</span> <span data-i18n="footer">لعبة مسابقات علمية للأصدقاء والفصول والنوادي</span> <span aria-hidden="true">•</span> <span>© 2026</span></footer>
       </section>
 
-      <!-- ============ شاشة الإعداد ============ -->
-      <section id="setupScreen" class="screen">
-        <div class="brand">
-          <h1 class="glow-title">لَمة</h1>
-        </div>
-
-        <div id="resumeBox" class="resume-box" style="display: none">
-          <span>🎮 <span data-i18n="resume_msg">عندك لعبة محفوظة لم تكتمل</span></span>
+      <!-- ============ إعداد اللعبة ============ -->
+      <section id="setupScreen" class="screen" aria-labelledby="setupTitle">
+        <div class="page-head">
+          <button class="icon-btn" type="button" onclick="Game.goLanding()" aria-label="رجوع" data-i18n-aria="back"><svg class="ic flip-ltr"><use href="#i-back" /></svg></button>
           <div>
-            <button class="btn btn-gold btn-sm" data-i18n="resume" onclick="Game.resume()">استكمال</button>
-            <button class="btn btn-ghost btn-sm" data-i18n="del" onclick="Game.discardSave()">حذف</button>
+            <h1 class="page-title" id="setupTitle" data-i18n="setup_h">لعبة جديدة</h1>
+            <p class="page-sub" data-i18n="setup_sub">ثلاث خطوات وتبدأ اللعبة.</p>
           </div>
         </div>
 
-        <div class="card">
-          <h2 data-i18n="teams_h">🎯 أسماء الفريقين</h2>
+        <nav class="stepper" aria-label="خطوات الإعداد" data-i18n-aria="steps_aria">
+          <a href="#stepTeams" class="st"><span class="st-n">1</span><span data-i18n="st_teams">الفرق</span></a>
+          <a href="#stepCats" class="st"><span class="st-n">2</span><span data-i18n="st_cats">الفئات</span></a>
+          <a href="#stepSettings" class="st"><span class="st-n">3</span><span data-i18n="st_settings">الإعدادات</span></a>
+        </nav>
+
+        <div id="resumeBox" class="resume-box" style="display: none" role="region" aria-label="لعبة محفوظة">
+          <div class="rb-text"><span class="rb-ic" aria-hidden="true">⏸</span><span data-i18n="resume_msg">عندك لعبة لم تكتمل. تكمّلها؟</span></div>
+          <div class="rb-actions">
+            <button class="btn btn-gold btn-sm" type="button" onclick="Game.resume()"><span data-i18n="resume">أكمل اللعبة</span></button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="Game.discardSave()"><span data-i18n="del">احذفها</span></button>
+          </div>
+        </div>
+
+        <section class="card setup-card" id="stepTeams" aria-labelledby="teamsH">
+          <h2 id="teamsH"><span class="sc-n">1</span><span data-i18n="teams_h">الفريقان</span></h2>
           <div class="teams-inputs">
             <div class="field team-setup t1">
-              <label data-i18n="team1_l">الفريق الأول</label>
-              <input id="team1" type="text" data-i18n-ph="team1_ph" placeholder="الفريق الأزرق" maxlength="20" />
+              <label for="team1" data-i18n="team1_l">اسم الفريق الأول</label>
+              <input id="team1" type="text" data-i18n-ph="team1_ph" placeholder="مثال: فريق الخلايا" maxlength="20" autocomplete="off" enterkeyhint="next" />
+              <span class="mini-label" data-i18n="color_l">لون الفريق</span>
               <div class="color-pick" id="colorPick1"></div>
-              <p class="ll-hint">وسائل المساعدة</p>
-              <div class="ll-preview">
-                <span class="ll-chip">🔄 تبديل السؤال</span>
-                <span class="ll-chip">📞 اتصال بصديق</span>
-                <span class="ll-chip">✌️ جاوب جوابين</span>
-              </div>
             </div>
             <div class="field team-setup t2">
-              <label data-i18n="team2_l">الفريق الثاني</label>
-              <input id="team2" type="text" data-i18n-ph="team2_ph" placeholder="الفريق الأحمر" maxlength="20" />
+              <label for="team2" data-i18n="team2_l">اسم الفريق الثاني</label>
+              <input id="team2" type="text" data-i18n-ph="team2_ph" placeholder="مثال: فريق الجينات" maxlength="20" autocomplete="off" enterkeyhint="done" />
+              <span class="mini-label" data-i18n="color_l">لون الفريق</span>
               <div class="color-pick" id="colorPick2"></div>
-              <p class="ll-hint">وسائل المساعدة</p>
-              <div class="ll-preview">
-                <span class="ll-chip">🔄 تبديل السؤال</span>
-                <span class="ll-chip">📞 اتصال بصديق</span>
-                <span class="ll-chip">✌️ جاوب جوابين</span>
-              </div>
             </div>
           </div>
-        </div>
+          <p class="ll-note">
+            <span data-i18n="ll_note">لكل فريق ثلاث وسائل مساعدة، كل وسيلة مرة واحدة:</span>
+            <span class="ll-chip">🔄 <span data-i18n="ll_swap">تبديل السؤال</span></span>
+            <span class="ll-chip">📞 <span data-i18n="ll_phone">اتصال بصديق</span></span>
+            <span class="ll-chip">✌️ <span data-i18n="ll_two">جوابان</span></span>
+          </p>
+        </section>
 
-        <div class="card">
+        <section class="card setup-card" id="stepCats" aria-labelledby="catsH">
           <div class="card-head-row">
-            <h2 data-i18n="cats_h">📚 اختر الفئات</h2>
-            <button class="btn btn-ghost btn-sm" data-i18n="editor_btn" onclick="Game.openEditor()">✏️ محرر الفئات</button>
+            <h2 id="catsH"><span class="sc-n">2</span><span data-i18n="cats_h">الفئات</span></h2>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="Game.openEditor()"><svg class="ic"><use href="#i-edit" /></svg><span data-i18n="editor_btn">فئاتي الخاصة</span></button>
           </div>
-          <p class="hint"><span data-i18n="cats_hint_a">اختر</span> <b>6</b> <span data-i18n="cats_hint_b">فئات بالضبط</span> — <span id="catCounter">0 / 6</span></p>
+          <div class="cats-bar">
+            <p class="hint" id="catsHint"><span data-i18n="cats_hint_a">اختر</span> <b>6</b> <span data-i18n="cats_hint_b">فئات للوحة</span></p>
+            <span class="count-pill" id="catCounter" aria-live="polite">0 / 6</span>
+            <div class="seg seg-sm" id="catCountSeg" role="group" aria-label="عدد الفئات" data-i18n-aria="catcount_l">
+              <button type="button" data-v="4">4</button>
+              <button type="button" data-v="5">5</button>
+              <button type="button" class="on" data-v="6">6</button>
+            </div>
+          </div>
+          <div class="cat-tools">
+            <label class="search-field">
+              <svg class="ic"><use href="#i-search" /></svg>
+              <span class="sr-only" data-i18n="cat_search_l">ابحث عن فئة</span>
+              <input id="catSearch" type="search" data-i18n-ph="cat_search_ph" placeholder="ابحث عن فئة…" autocomplete="off" enterkeyhint="search" />
+            </label>
+            <div class="filter-chips" id="catFilters" role="group" aria-label="تصفية الفئات" data-i18n-aria="cat_filter_l">
+              <button type="button" class="fchip on" data-group="all" aria-pressed="true"><span data-i18n="g_all">الكل</span></button>
+              <button type="button" class="fchip" data-group="bio" aria-pressed="false">🧬 <span data-i18n="g_bio">أحياء وعلوم</span></button>
+              <button type="button" class="fchip" data-group="kuwait" aria-pressed="false">🇰🇼 <span data-i18n="g_kw">الكويت</span></button>
+              <button type="button" class="fchip" data-group="general" aria-pressed="false">🎯 <span data-i18n="g_general">عامة</span></button>
+              <button type="button" class="fchip" data-group="custom" aria-pressed="false">✏️ <span data-i18n="g_custom">فئاتي</span></button>
+              <button type="button" class="fchip" data-group="selected" aria-pressed="false">✓ <span data-i18n="g_selected">المختارة</span></button>
+            </div>
+          </div>
           <div id="catsGrid" class="cats-grid"></div>
-        </div>
+          <p class="empty-state" id="catsEmpty" hidden></p>
+        </section>
 
-        <div class="card">
-          <h2 data-i18n="settings_h">⚙️ الإعدادات</h2>
-          <div class="settings-row">
-            <div class="field">
-              <label data-i18n="rand_l">عشوائية الأسئلة</label>
-              <div class="seg" id="randSeg">
-                <button class="on" data-v="1" data-i18n="rand_on">عشوائي 🎲</button>
-                <button data-v="0" data-i18n="rand_off">ثابت</button>
+        <section class="card setup-card" id="stepSettings" aria-labelledby="setH">
+          <h2 id="setH"><span class="sc-n">3</span><span data-i18n="settings_h">الإعدادات</span> <small class="opt" data-i18n="optional">اختياري</small></h2>
+          <div class="settings-list">
+            <div class="set-row">
+              <div class="set-text">
+                <span class="set-t" data-i18n="golden_l">👑 الجولة الذهبية</span>
+                <span class="set-d" data-i18n="golden_d">قبل النتيجة، يراهن كل فريق بجزء من نقاطه على سؤال أخير.</span>
+              </div>
+              <div class="seg" id="goldenSeg" role="group" aria-label="الجولة الذهبية" data-i18n-aria="golden_aria">
+                <button type="button" data-v="1"><span data-i18n="on">تشغيل</span></button>
+                <button type="button" class="on" data-v="0"><span data-i18n="off">إيقاف</span></button>
               </div>
             </div>
-            <div class="field">
-              <label>عدد الفئات</label>
-              <div class="seg" id="catCountSeg">
-                <button data-v="4">4 فئات</button>
-                <button data-v="5">5 فئات</button>
-                <button class="on" data-v="6">6 فئات</button>
+            <div class="set-row">
+              <div class="set-text">
+                <span class="set-t" data-i18n="rand_l">🎲 ترتيب الأسئلة</span>
+                <span class="set-d" data-i18n="rand_d">العشوائي يختار أسئلة مختلفة في كل لعبة.</span>
+              </div>
+              <div class="seg" id="randSeg" role="group" aria-label="ترتيب الأسئلة" data-i18n-aria="rand_aria">
+                <button type="button" class="on" data-v="1"><span data-i18n="rand_on">عشوائي</span></button>
+                <button type="button" data-v="0"><span data-i18n="rand_off">ثابت</span></button>
               </div>
             </div>
-          </div>
-          <div class="field" style="margin-top: 16px">
-            <label data-i18n="theme_l">الثيم</label>
-            <div class="theme-picker" id="themePicker"></div>
-          </div>
-          <div class="field" style="margin-top: 12px">
-            <label>موسيقى خلفية</label>
-            <div class="seg" id="musicSeg">
-              <button data-v="1">تشغيل 🎵</button>
-              <button class="on" data-v="0">إيقاف</button>
+            <div class="set-row">
+              <div class="set-text">
+                <span class="set-t" data-i18n="music_l">🎵 موسيقى خلفية</span>
+                <span class="set-d" data-i18n="music_d">نغمة هادئة أثناء اللعب. يعمل بعد أول لمسة.</span>
+              </div>
+              <div class="seg" id="musicSeg" role="group" aria-label="موسيقى خلفية" data-i18n-aria="music_aria">
+                <button type="button" data-v="1"><span data-i18n="on">تشغيل</span></button>
+                <button type="button" class="on" data-v="0"><span data-i18n="off">إيقاف</span></button>
+              </div>
+            </div>
+            <div class="set-row set-col">
+              <div class="set-text">
+                <span class="set-t" data-i18n="theme_l">🎨 ألوان اللعبة</span>
+                <span class="set-d" data-i18n="theme_d">كل لون مأخوذ من خلية في الشعار.</span>
+              </div>
+              <div class="theme-picker" id="themePicker"></div>
             </div>
           </div>
-          <div class="field" style="margin-top: 12px">
-            <label data-i18n="golden_l">👑 الجولة الذهبية (رهان نقاط على سؤال أخير)</label>
-            <div class="seg" id="goldenSeg">
-              <button data-v="1" data-i18n="golden_on">تشغيل 👑</button>
-              <button class="on" data-v="0" data-i18n="golden_off">إيقاف</button>
-            </div>
-          </div>
-        </div>
+        </section>
 
-        <button id="startBtn" class="btn btn-gold btn-lg btn-block pulse" data-i18n="start">ابدأ اللعب 🚀</button>
+        <div class="start-bar">
+          <p class="sb-status" id="setupStatus" aria-live="polite"></p>
+          <button id="startBtn" type="button" class="btn btn-gold btn-lg"><svg class="ic"><use href="#i-play" /></svg><span data-i18n="start">ابدأ اللعب</span></button>
+        </div>
       </section>
 
-      <!-- ============ شاشة اللوحة (نمط سين جيم) ============ -->
-      <section id="boardScreen" class="screen">
+      <!-- ============ لوحة اللعب ============ -->
+      <section id="boardScreen" class="screen" aria-label="لوحة الأسئلة">
         <header class="game-header">
           <div class="gh-side">
-            <span class="gh-logo" onclick="Game.goLanding()">لَمة</span>
-            <button class="turn-pill" id="bTurnPill" onclick="Game.toggleTurn()" title="اضغط لتبديل الدور">دور فريق : —</button>
+            <button class="gh-brand" type="button" onclick="Game.home()" aria-label="حفظ اللعبة والعودة للرئيسية" data-i18n-aria="home_save_aria"><img src="assets/logo-mark.png" alt="" width="336" height="313" /></button>
+            <button class="turn-pill" id="bTurnPill" type="button" onclick="Game.toggleTurn()" title="اضغط لتبديل الدور" data-i18n-title="turn_tip">دور فريق : —</button>
+            <span class="progress-chip" title="الأسئلة المنتهية" data-i18n-title="progress_tip"><span id="progressMini">0 / 0</span></span>
           </div>
           <div class="gh-side">
-            <button class="mode-toggle" onclick="Game.toggleMode()" aria-label="الوضع الفاتح / الغامق" title="الوضع الفاتح / الغامق"><span class="mt-knob"></span></button>
-            <button class="gh-btn" onclick="Game.finish()"><span class="gh-ic">⬅</span> انتهاء اللعبة</button>
-            <button class="gh-btn" onclick="Game.askClose()"><span class="gh-ic">▦</span> الرجوع للوحة</button>
-            <button class="gh-btn" onclick="Game.home()"><span class="gh-ic">🚪</span> الخروج</button>
+            <button class="mode-toggle" type="button" onclick="Game.toggleMode()" aria-label="الوضع الفاتح أو الداكن" data-i18n-aria="mode_aria" title="الوضع الفاتح / الداكن"><span class="mt-knob"><svg class="ic mt-sun"><use href="#i-sun" /></svg><svg class="ic mt-moon"><use href="#i-moon" /></svg></span></button>
+            <button class="gh-btn" type="button" onclick="Game.finish()"><svg class="ic"><use href="#i-flag" /></svg><span class="gh-lbl" data-i18n="end_game">إنهاء اللعبة</span></button>
+            <button class="gh-btn" type="button" onclick="Game.home()"><svg class="ic"><use href="#i-exit" /></svg><span class="gh-lbl" data-i18n="exit">خروج</span></button>
           </div>
         </header>
 
+        <p class="board-hint" data-i18n="board_hint">الفريق صاحب الدور يختار خانة. الرقم = نقاط السؤال.</p>
         <div id="board" class="board"></div>
 
         <div class="board-bottom">
@@ -202,311 +296,365 @@
               <span class="bb-score" id="t1Score">0</span>
             </div>
             <div class="bb-ll">
-              <span class="qs-ll-label">وسائل المساعدة</span>
+              <span class="qs-ll-label" data-i18n="lifelines">وسائل المساعدة</span>
               <div class="lifelines qs-lifelines" id="t1Lifelines"></div>
             </div>
+            <details class="score-adjust">
+              <summary data-i18n="adjust">تصحيح النقاط</summary>
+              <div class="sa-btns">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="Game.adjust(1, -100)">−100</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="Game.adjust(1, 100)">+100</button>
+              </div>
+            </details>
           </div>
-          <div class="bb-logo">لَمة</div>
+          <div class="bb-logo" aria-hidden="true"><img src="assets/logo-mark.png" alt="" width="336" height="313" /></div>
           <div class="bb-team t2" id="teamCard2">
             <div class="bb-row">
               <span class="bb-name" id="t2Name">الفريق الثاني</span>
               <span class="bb-score" id="t2Score">0</span>
             </div>
             <div class="bb-ll">
-              <span class="qs-ll-label">وسائل المساعدة</span>
+              <span class="qs-ll-label" data-i18n="lifelines">وسائل المساعدة</span>
               <div class="lifelines qs-lifelines" id="t2Lifelines"></div>
             </div>
+            <details class="score-adjust">
+              <summary data-i18n="adjust">تصحيح النقاط</summary>
+              <div class="sa-btns">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="Game.adjust(2, -100)">−100</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="Game.adjust(2, 100)">+100</button>
+              </div>
+            </details>
           </div>
         </div>
       </section>
 
-      <!-- ============ شاشة النتيجة ============ -->
-      <section id="resultScreen" class="screen">
-        <div class="brand"><h1 class="glow-title" data-i18n="result_h">النتيجة</h1></div>
-        <div class="card result-card">
-          <div class="trophy">🏆</div>
-          <div class="winner-name" id="winnerName">—</div>
-          <div class="final-scores">
-            <div class="fs t1"><div class="n" id="fsName1">الفريق الأول</div><div class="s" id="fsScore1">0</div><div class="fc" id="fsCorrect1"></div></div>
-            <div class="fs t2"><div class="n" id="fsName2">الفريق الثاني</div><div class="s" id="fsScore2">0</div><div class="fc" id="fsCorrect2"></div></div>
-          </div>
-          <div class="modal-actions">
-            <button class="btn btn-gold btn-lg" data-i18n="new_game" onclick="Game.playAgain()">🔁 لعبة جديدة</button>
-            <button class="btn btn-ghost btn-lg" onclick="Game.shareResult()">📸 صورة النتيجة</button>
+      <!-- ============ النتيجة ============ -->
+      <section id="resultScreen" class="screen" aria-labelledby="resultH">
+        <div class="result-wrap">
+          <div class="result-card">
+            <div class="trophy hex" aria-hidden="true">🏆</div>
+            <h1 class="result-h" id="resultH" data-i18n="result_h">انتهت اللعبة</h1>
+            <p class="winner-label" data-i18n="winner_l">الفائز</p>
+            <div class="winner-name" id="winnerName" aria-live="polite">—</div>
+            <div class="final-scores">
+              <div class="fs t1"><div class="n" id="fsName1">الفريق الأول</div><div class="s" id="fsScore1">0</div><div class="fc" id="fsCorrect1"></div></div>
+              <div class="fs t2"><div class="n" id="fsName2">الفريق الثاني</div><div class="s" id="fsScore2">0</div><div class="fc" id="fsCorrect2"></div></div>
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-gold btn-lg" type="button" onclick="Game.playAgain()"><svg class="ic"><use href="#i-reset" /></svg><span data-i18n="new_game">لعبة جديدة</span></button>
+              <button class="btn btn-ghost btn-lg" type="button" onclick="Game.shareResult()"><svg class="ic"><use href="#i-camera" /></svg><span data-i18n="share_img">حفظ صورة النتيجة</span></button>
+            </div>
+            <button class="link-btn" type="button" onclick="Game.goLanding()"><svg class="ic"><use href="#i-home" /></svg><span data-i18n="go_home">الصفحة الرئيسية</span></button>
           </div>
         </div>
       </section>
-    </div>
+    </main>
 
-    <!-- ============ شاشة السؤال (نمط سين جيم) ============ -->
-    <div id="qModal" class="modal fullscreen">
+    <!-- ============ شاشة السؤال ============ -->
+    <div id="qModal" class="modal fullscreen" role="dialog" aria-modal="true" aria-labelledby="qText">
       <div class="modal-box q-box">
         <header class="game-header">
           <div class="gh-side">
-            <span class="gh-logo">لَمة</span>
-            <button class="turn-pill" id="qTurnPill" onclick="Game.toggleTurn()" title="اضغط لتبديل الدور">دور فريق : —</button>
+            <span class="gh-brand" aria-hidden="true"><img src="assets/logo-mark.png" alt="" width="336" height="313" /></span>
+            <button class="turn-pill" id="qTurnPill" type="button" onclick="Game.toggleTurn()" title="اضغط لتبديل الدور" data-i18n-title="turn_tip">دور فريق : —</button>
           </div>
           <div class="gh-side">
-            <button class="mode-toggle" onclick="Game.toggleMode()" aria-label="الوضع الفاتح / الغامق" title="الوضع الفاتح / الغامق"><span class="mt-knob"></span></button>
-            <button class="gh-btn" onclick="Game.finish()"><span class="gh-ic">⬅</span> انتهاء اللعبة</button>
-            <button class="gh-btn" onclick="Game.askClose()"><span class="gh-ic">▦</span> الرجوع للوحة</button>
-            <button class="gh-btn" onclick="Game.home()"><span class="gh-ic">🚪</span> الخروج</button>
+            <button class="mode-toggle" type="button" onclick="Game.toggleMode()" aria-label="الوضع الفاتح أو الداكن" data-i18n-aria="mode_aria" title="الوضع الفاتح / الداكن"><span class="mt-knob"><svg class="ic mt-sun"><use href="#i-sun" /></svg><svg class="ic mt-moon"><use href="#i-moon" /></svg></span></button>
+            <button class="gh-btn" type="button" onclick="Game.askClose()"><svg class="ic"><use href="#i-grid" /></svg><span class="gh-lbl" data-i18n="back_board">اللوحة</span></button>
+            <button class="gh-btn" type="button" onclick="Game.finish()"><svg class="ic"><use href="#i-flag" /></svg><span class="gh-lbl" data-i18n="end_game">إنهاء اللعبة</span></button>
+            <button class="gh-btn" type="button" onclick="Game.home()"><svg class="ic"><use href="#i-exit" /></svg><span class="gh-lbl" data-i18n="exit">خروج</span></button>
           </div>
         </header>
 
         <div class="q-main">
-          <!-- الشريط الجانبي: الفرق ووسائل المساعدة -->
-          <aside class="q-side">
-            <div class="qs-teams" id="qSideTeams">
-              <div class="q-side-team t1" id="qSideT1">
-                <div class="qs-name" id="qT1Name">الفريق الأول</div>
-                <div class="qs-score" id="qT1Score">0</div>
-                <div class="qs-ll-label">وسائل المساعدة</div>
-                <div class="lifelines qs-lifelines" id="qT1Lifelines"></div>
-              </div>
-              <div class="q-side-team t2" id="qSideT2">
-                <div class="qs-name" id="qT2Name">الفريق الثاني</div>
-                <div class="qs-score" id="qT2Score">0</div>
-                <div class="qs-ll-label">وسائل المساعدة</div>
-                <div class="lifelines qs-lifelines" id="qT2Lifelines"></div>
-              </div>
-              <div class="qs-brand">لَمة</div>
-            </div>
-
-            <!-- بطاقة وسيلة المساعدة (تحل محل الفرق عند الاختيار) -->
-            <div class="ll-card" id="llCard" hidden>
-              <h3 id="llTitle">اتصال بصديق</h3>
-              <p id="llDesc"></p>
-              <div class="ll-visual">
-                <span class="ll-big-icon" id="llIcon">📞</span>
-                <div class="ll-ring" id="llRing" hidden>
-                  <svg viewBox="0 0 120 120">
-                    <circle class="ring-bg" cx="60" cy="60" r="54"></circle>
-                    <circle class="ring-fg" id="llRingFg" cx="60" cy="60" r="54"></circle>
-                  </svg>
-                  <span class="ll-ring-time" id="llRingTime">01:00</span>
-                </div>
-              </div>
-              <button class="ll-start" id="llStartBtn" onclick="Game.lifelineStart()">ابدأ</button>
-              <button class="ll-cancel" id="llCancelBtn" onclick="Game.lifelineCancel()">رجوع</button>
-            </div>
-          </aside>
-
           <!-- إطار السؤال -->
           <div class="q-frame" id="qFrame" data-view="q">
-            <div class="timer-pill">
-              <button id="pauseBtn" class="tp-btn" onclick="Game.togglePause()" title="إيقاف / متابعة">⏸</button>
-              <span class="timer" id="timer">00:00</span>
-              <button class="tp-btn" onclick="Game.restartTimer()" title="تصفير المؤقت">↺</button>
+            <div class="q-top">
+              <span class="q-cat-badge" id="qCat">الفئة</span>
+              <div class="timer-pill" role="group" aria-label="المؤقت" data-i18n-aria="timer_aria">
+                <button id="pauseBtn" class="tp-btn" type="button" onclick="Game.togglePause()" title="إيقاف / متابعة" aria-label="إيقاف المؤقت أو متابعته" data-i18n-aria="pause_aria">⏸</button>
+                <span class="timer" id="timer" role="timer">00:00</span>
+                <button class="tp-btn" type="button" onclick="Game.restartTimer()" title="تصفير المؤقت" aria-label="تصفير المؤقت" data-i18n-aria="reset_aria"><svg class="ic"><use href="#i-reset" /></svg></button>
+              </div>
+              <span class="q-points-badge" id="qPoints">200 نقطة</span>
             </div>
-            <span class="q-points-badge" id="qPoints">200 نقطة</span>
 
-            <!-- عرض السؤال -->
+            <!-- السؤال -->
             <div class="q-view q-body" id="viewQ">
               <div class="q-text" id="qText">السؤال</div>
               <img id="qImg" class="q-img" alt="" loading="eager" />
               <div class="q-note" id="qNote"></div>
             </div>
 
-            <!-- عرض الإجابة -->
+            <!-- الإجابة -->
             <div class="q-view q-body" id="viewA">
+              <span class="view-label" data-i18n="answer_l">الإجابة الصحيحة</span>
               <div class="a-text" id="answerText"></div>
               <img id="answerImg" class="a-img" alt="" />
             </div>
 
-            <!-- شاشة الحكم -->
+            <!-- الحكم -->
             <div class="q-view q-body" id="viewJ">
-              <div class="judge-title">أي فريق جاوب صح؟</div>
+              <div class="judge-title" data-i18n="judge_q">أي فريق جاوب صح؟</div>
               <div class="judge-teams">
-                <button class="judge-btn" id="awardT1" onclick="Game.award(1)">الفريق الأول</button>
-                <button class="judge-btn" id="awardT2" onclick="Game.award(2)">الفريق الثاني</button>
+                <button class="judge-btn jb-1" id="awardT1" type="button" onclick="Game.award(1)">الفريق الأول</button>
+                <button class="judge-btn jb-2" id="awardT2" type="button" onclick="Game.award(2)">الفريق الثاني</button>
               </div>
-              <button class="judge-none" onclick="Game.award(0)">ولا أحد</button>
+              <button class="judge-none" type="button" onclick="Game.award(0)"><span data-i18n="nobody">ولا أحد</span></button>
+              <p class="kbd-hint"><kbd>1</kbd> <kbd>2</kbd> <kbd>0</kbd> <span data-i18n="kbd_judge">من لوحة المفاتيح</span></p>
             </div>
 
-            <span class="q-cat-badge" id="qCat">الفئة</span>
-            <button class="corner-btn c-green" id="showAnswerBtn" onclick="Game.showAnswer()">الإجابة</button>
-            <button class="corner-btn c-dark" id="whichTeamBtn" onclick="Game.openJudge()">أي فريق ؟</button>
-            <button class="corner-btn c-orange" id="backToQBtn" onclick="Game.backToQuestion()"><span class="cb-ic">◀</span> ارجع للسؤال</button>
-            <button class="corner-btn c-green" id="backToABtn" onclick="Game.backToAnswer()">العودة للإجابة</button>
+            <div class="q-actions">
+              <button class="corner-btn c-orange" id="backToQBtn" type="button" onclick="Game.backToQuestion()"><svg class="ic flip-ltr"><use href="#i-back" /></svg><span data-i18n="back_q">ارجع للسؤال</span></button>
+              <button class="corner-btn c-green" id="backToABtn" type="button" onclick="Game.backToAnswer()"><svg class="ic flip-ltr"><use href="#i-back" /></svg><span data-i18n="back_a">ارجع للإجابة</span></button>
+              <span class="qa-spacer"></span>
+              <button class="corner-btn c-green" id="showAnswerBtn" type="button" onclick="Game.showAnswer()"><span data-i18n="show_answer">اعرض الإجابة</span> <kbd class="kbd-inline">Space</kbd></button>
+              <button class="corner-btn c-dark" id="whichTeamBtn" type="button" onclick="Game.openJudge()"><span data-i18n="which_team">مين جاوب صح؟</span></button>
+            </div>
           </div>
+
+          <!-- الشريط الجانبي: الفرق ووسائل المساعدة -->
+          <aside class="q-side">
+            <div class="qs-teams" id="qSideTeams">
+              <div class="q-side-team t1" id="qSideT1">
+                <div class="qs-head"><span class="qs-name" id="qT1Name">الفريق الأول</span><span class="qs-score" id="qT1Score">0</span></div>
+                <div class="qs-ll-label" data-i18n="lifelines">وسائل المساعدة</div>
+                <div class="lifelines qs-lifelines" id="qT1Lifelines"></div>
+              </div>
+              <div class="q-side-team t2" id="qSideT2">
+                <div class="qs-head"><span class="qs-name" id="qT2Name">الفريق الثاني</span><span class="qs-score" id="qT2Score">0</span></div>
+                <div class="qs-ll-label" data-i18n="lifelines">وسائل المساعدة</div>
+                <div class="lifelines qs-lifelines" id="qT2Lifelines"></div>
+              </div>
+              <div class="qs-brand" aria-hidden="true"><img src="assets/logo-full.png" alt="" width="414" height="417" /></div>
+            </div>
+
+            <!-- بطاقة وسيلة المساعدة -->
+            <div class="ll-card" id="llCard" hidden>
+              <h3 id="llTitle">اتصال بصديق</h3>
+              <p id="llDesc"></p>
+              <div class="ll-visual">
+                <span class="ll-big-icon hex" id="llIcon">📞</span>
+                <div class="ll-ring" id="llRing" hidden>
+                  <svg viewBox="0 0 120 120" aria-hidden="true">
+                    <circle class="ring-bg" cx="60" cy="60" r="54"></circle>
+                    <circle class="ring-fg" id="llRingFg" cx="60" cy="60" r="54"></circle>
+                  </svg>
+                  <span class="ll-ring-time" id="llRingTime" role="timer">01:00</span>
+                </div>
+              </div>
+              <button class="ll-start" id="llStartBtn" type="button" onclick="Game.lifelineStart()">ابدأ</button>
+              <button class="ll-cancel" id="llCancelBtn" type="button" onclick="Game.lifelineCancel()">رجوع</button>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
 
-    <!-- ============ نافذة الجولة الذهبية ============ -->
-    <div id="goldenModal" class="modal fullscreen">
+    <!-- ============ الجولة الذهبية ============ -->
+    <div id="goldenModal" class="modal fullscreen golden" role="dialog" aria-modal="true" aria-labelledby="goldenH">
       <div class="modal-box golden-box">
-        <h2 class="golden-title">👑 الجولة الذهبية</h2>
-
-        <!-- مرحلة الرهان -->
-        <div id="goldStageWager">
-          <p class="hint golden-hint">كل فريق يراهن بجزء من نقاطه — الإجابة الصحيحة تضيف الرهان، والخاطئة تخصمه!</p>
-          <div class="gold-teams">
-            <div class="gold-team t1">
-              <div class="gt-name" id="gtName1">الفريق الأول</div>
-              <div class="gt-score" id="gtScore1"></div>
-              <input id="wager1" type="number" inputmode="numeric" min="0" value="0" />
-            </div>
-            <div class="gold-team t2">
-              <div class="gt-name" id="gtName2">الفريق الثاني</div>
-              <div class="gt-score" id="gtScore2"></div>
-              <input id="wager2" type="number" inputmode="numeric" min="0" value="0" />
-            </div>
-          </div>
-          <button class="btn btn-gold btn-lg btn-block" onclick="Game.goldenShowQuestion()">اعرض السؤال 👑</button>
+        <div class="golden-head">
+          <span class="golden-crown hex" aria-hidden="true">👑</span>
+          <h2 class="golden-title" id="goldenH" data-i18n="golden_h">الجولة الذهبية</h2>
         </div>
 
-        <!-- مرحلة السؤال والحكم -->
+        <!-- 1) الرهان -->
+        <div id="goldStageWager">
+          <ol class="g-steps" aria-label="مراحل الجولة الذهبية"><li class="on" data-i18n="g_s1">الرهان</li><li data-i18n="g_s2">السؤال</li><li data-i18n="g_s3">الحكم</li></ol>
+          <p class="hint golden-hint" data-i18n="golden_hint">كل فريق يكتب رهانه سرّاً. الإجابة الصحيحة تضيف الرهان، والخاطئة تخصمه.</p>
+          <div class="gold-teams">
+            <div class="gold-team t1">
+              <label class="gt-name" id="gtName1" for="wager1">الفريق الأول</label>
+              <div class="gt-score" id="gtScore1"></div>
+              <input id="wager1" type="number" inputmode="numeric" min="0" step="100" value="0" enterkeyhint="next" />
+              <div class="wager-chips" data-for="wager1"></div>
+            </div>
+            <div class="gold-team t2">
+              <label class="gt-name" id="gtName2" for="wager2">الفريق الثاني</label>
+              <div class="gt-score" id="gtScore2"></div>
+              <input id="wager2" type="number" inputmode="numeric" min="0" step="100" value="0" enterkeyhint="done" />
+              <div class="wager-chips" data-for="wager2"></div>
+            </div>
+          </div>
+          <button class="btn btn-gold btn-lg btn-block" type="button" onclick="Game.goldenShowQuestion()"><span data-i18n="g_show_q">ثبّت الرهان واعرض السؤال</span></button>
+        </div>
+
+        <!-- 2) السؤال والحكم -->
         <div id="goldStageQ" style="display: none">
-          <div class="q-text" id="goldQText">السؤال</div>
+          <div class="q-text gold-q" id="goldQText">السؤال</div>
           <img id="goldQImg" class="q-img" alt="" />
           <div class="answer-box" id="goldAnswerBox">
-            <span class="lbl">الإجابة الصحيحة</span><span id="goldAnswerText"></span>
+            <span class="lbl" data-i18n="answer_l">الإجابة الصحيحة</span><span id="goldAnswerText"></span>
             <img id="goldAnswerImg" class="a-img" alt="" />
           </div>
           <div class="modal-actions">
-            <button id="goldRevealBtn" class="btn btn-gold btn-lg" onclick="Game.goldenReveal()">عرض الإجابة 👁️</button>
+            <button id="goldRevealBtn" class="btn btn-gold btn-lg" type="button" onclick="Game.goldenReveal()"><span data-i18n="g_reveal">اعرض الإجابة</span></button>
           </div>
           <div id="goldJudge" style="display: none">
-            <p class="hint">من أجاب إجابة صحيحة؟</p>
+            <p class="hint" data-i18n="g_judge">حدّد نتيجة كل فريق:</p>
             <div class="gj-row" id="gjRow1">
               <span class="gj-name" id="gjName1">الفريق الأول</span>
-              <button class="gj-btn" data-ok="1" onclick="Game.goldenSetResult(1, true)">صح ✓</button>
-              <button class="gj-btn" data-ok="0" onclick="Game.goldenSetResult(1, false)">خطأ ✗</button>
+              <button class="gj-btn" type="button" data-ok="1" onclick="Game.goldenSetResult(1, true)"><svg class="ic"><use href="#i-check" /></svg><span data-i18n="right">صح</span></button>
+              <button class="gj-btn" type="button" data-ok="0" onclick="Game.goldenSetResult(1, false)"><svg class="ic"><use href="#i-x" /></svg><span data-i18n="wrong">خطأ</span></button>
             </div>
             <div class="gj-row" id="gjRow2">
               <span class="gj-name" id="gjName2">الفريق الثاني</span>
-              <button class="gj-btn" data-ok="1" onclick="Game.goldenSetResult(2, true)">صح ✓</button>
-              <button class="gj-btn" data-ok="0" onclick="Game.goldenSetResult(2, false)">خطأ ✗</button>
+              <button class="gj-btn" type="button" data-ok="1" onclick="Game.goldenSetResult(2, true)"><svg class="ic"><use href="#i-check" /></svg><span data-i18n="right">صح</span></button>
+              <button class="gj-btn" type="button" data-ok="0" onclick="Game.goldenSetResult(2, false)"><svg class="ic"><use href="#i-x" /></svg><span data-i18n="wrong">خطأ</span></button>
             </div>
-            <button class="btn btn-gold btn-lg btn-block" onclick="Game.goldenApply()">اعتماد النتيجة 🏁</button>
+            <button class="btn btn-gold btn-lg btn-block" type="button" onclick="Game.goldenApply()"><span data-i18n="g_apply">اعتمد النتيجة</span></button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ============ نافذة الدخول ============ -->
-    <div id="authModal" class="modal">
+    <!-- ============ الدخول ============ -->
+    <div id="authModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authH">
       <div class="modal-box auth-box">
-        <button class="icon-btn auth-close" onclick="Game.closeAuth()">✕</button>
-        <div class="auth-brand">لَمة</div>
-        <p class="hint" style="text-align:center">سجّل دخولك لحفظ إحصائياتك وفئاتك الخاصة عبر جميع أجهزتك</p>
-        <button class="btn btn-gold btn-block" onclick="Game.googleLogin()">
-          الدخول بحساب Google
+        <button class="icon-btn auth-close" type="button" onclick="Game.closeAuth()" aria-label="إغلاق" data-i18n-aria="close"><svg class="ic"><use href="#i-x" /></svg></button>
+        <div class="auth-brand"><img src="assets/logo-full.png" alt="" width="414" height="417" /></div>
+        <h2 class="auth-h" id="authH" data-i18n="auth_h">احفظ تقدّمك</h2>
+        <p class="auth-p" data-i18n="auth_p">سجّل دخولك لحفظ إحصائياتك وإنجازاتك وفئاتك الخاصة على كل أجهزتك. اللعب كضيف يحفظها على هذا الجهاز فقط.</p>
+        <button class="btn btn-google btn-block" type="button" onclick="Game.googleLogin()">
+          <svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          <span data-i18n="google_btn">الدخول بحساب Google</span>
         </button>
-        <div class="auth-err" id="authErr"></div>
-        <div class="auth-divider"><span>أو</span></div>
-        <button class="btn btn-ghost btn-block" onclick="Game.guest()">🎮 العب كضيف</button>
+        <div class="auth-err" id="authErr" role="alert"></div>
+        <div class="auth-divider"><span data-i18n="or">أو</span></div>
+        <button class="btn btn-ghost btn-block" type="button" onclick="Game.guest()"><span data-i18n="guest_btn">العب كضيف</span></button>
       </div>
     </div>
 
-    <!-- ============ نافذة الملف الشخصي ============ -->
-    <div id="profileModal" class="modal">
+    <!-- ============ الملف الشخصي ============ -->
+    <div id="profileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="profName">
       <div class="modal-box profile-box">
-        <button class="icon-btn auth-close" onclick="Game.closeProfile()">✕</button>
-        <div class="profile-avatar" id="profAvatar">👤</div>
-        <div class="profile-name" id="profName">ضيف</div>
-        <div class="profile-email" id="profEmail"></div>
+        <button class="icon-btn auth-close" type="button" onclick="Game.closeProfile()" aria-label="إغلاق" data-i18n-aria="close"><svg class="ic"><use href="#i-x" /></svg></button>
+        <div class="profile-top">
+          <div class="profile-avatar hex" id="profAvatar">👤</div>
+          <div>
+            <div class="profile-name" id="profName">ضيف</div>
+            <div class="profile-email" id="profEmail"></div>
+          </div>
+        </div>
         <div class="profile-stats">
-          <div class="ps"><span class="ps-n" id="psGames">0</span><span class="ps-l">لعبة</span></div>
-          <div class="ps"><span class="ps-n" id="psWins">0</span><span class="ps-l">أعلى نقاط</span></div>
-          <div class="ps"><span class="ps-n" id="psCats">0</span><span class="ps-l">فئة خاصة</span></div>
+          <div class="ps"><span class="ps-n" id="psGames">0</span><span class="ps-l" data-i18n="ps_games">لعبة</span></div>
+          <div class="ps"><span class="ps-n" id="psWins">0</span><span class="ps-l" data-i18n="ps_best">أعلى نقاط</span></div>
+          <div class="ps"><span class="ps-n" id="psCats">0</span><span class="ps-l" data-i18n="ps_cats">فئة خاصة</span></div>
         </div>
 
-        <div class="prof-section">
-          <h3>🏅 الإنجازات</h3>
+        <section class="prof-section">
+          <h3><span data-i18n="ach_h">الإنجازات</span> <span class="ach-count" id="achCount"></span></h3>
           <div class="badges" id="badges"></div>
-        </div>
+        </section>
 
-        <div class="prof-section">
-          <h3>📜 آخر المباريات</h3>
+        <section class="prof-section">
+          <h3 data-i18n="hist_h">آخر المباريات</h3>
           <div class="history-list" id="historyList"></div>
-        </div>
+        </section>
 
         <div class="modal-actions" id="profActions"></div>
       </div>
     </div>
 
-    <!-- ============ نافذة المساعدة ============ -->
-    <div id="helpModal" class="modal">
+    <!-- ============ طريقة اللعب ============ -->
+    <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpH">
       <div class="modal-box help-box">
-        <button class="icon-btn auth-close" onclick="Game.closeHelp()">✕</button>
-        <h2 class="help-title">❓ كيف تلعب لَمة</h2>
+        <button class="icon-btn auth-close" type="button" onclick="Game.closeHelp()" aria-label="إغلاق" data-i18n-aria="close"><svg class="ic"><use href="#i-x" /></svg></button>
+        <h2 class="help-title" id="helpH" data-i18n="help_h">طريقة لعب بايو</h2>
+        <p class="help-lead" data-i18n="help_lead">لعبة لفريقين ومقدّم واحد يقرأ الأسئلة ويحكم. كل شيء على شاشة واحدة.</p>
+
+        <ol class="help-flow">
+          <li><span class="hf-n hex hex-cream">1</span><div><b data-i18n="h1_t">جهّزوا اللعبة</b><p data-i18n="h1_d">اكتبوا أسماء الفريقين، واختاروا من 4 إلى 6 فئات.</p></div></li>
+          <li><span class="hf-n hex hex-lime">2</span><div><b data-i18n="h2_t">اختاروا خانة</b><p data-i18n="h2_d">في كل فئة ستة أسئلة: اثنان بقيمة 200، واثنان 400، واثنان 600. الفريق صاحب الدور يختار.</p></div></li>
+          <li><span class="hf-n hex hex-aqua">3</span><div><b data-i18n="h3_t">جاوبوا ثم احكموا</b><p data-i18n="h3_d">المؤقت يعدّ صعوداً. المقدّم يعرض الإجابة ثم يختار الفريق الذي جاوب صح، أو «ولا أحد». الدور ينتقل بعدها تلقائياً.</p></div></li>
+          <li><span class="hf-n hex hex-rose">4</span><div><b data-i18n="h4_t">الفوز</b><p data-i18n="h4_d">عندما تُفتح كل الخانات تظهر النتيجة. الأعلى نقاطاً يفوز.</p></div></li>
+        </ol>
 
         <div class="help-section">
-          <h3>🎯 الفكرة</h3>
-          <p>فريقان يتنافسان على لوحة من 6 فئات. كل فئة فيها أسئلة بقيم <b>200 / 400 / 600</b>. الفريق صاحب الدور يختار خلية، ويُعرض السؤال مع مؤقّت. إن أجاب صحيحاً يكسب النقاط. الأعلى نقاطاً في النهاية يفوز 🏆.</p>
+          <h3 data-i18n="hl_t">🛟 وسائل المساعدة: مرة واحدة لكل فريق</h3>
+          <ul>
+            <li><b>🔄 <span data-i18n="ll_swap">تبديل السؤال</span>:</b> <span data-i18n="hl_swap">سؤال آخر من نفس الفئة وبنفس النقاط.</span></li>
+            <li><b>📞 <span data-i18n="ll_phone">اتصال بصديق</span>:</b> <span data-i18n="hl_phone">دقيقة واحدة للاتصال بشخص، ومؤقت السؤال يتوقف خلالها.</span></li>
+            <li><b>✌️ <span data-i18n="ll_two">جوابان</span>:</b> <span data-i18n="hl_two">يحق للفريق إعطاء جوابين، ويُحسب له إذا كان أحدهما صحيحاً.</span></li>
+          </ul>
+          <p class="help-note" data-i18n="hl_note">تُستخدم الوسيلة من شاشة السؤال بالضغط على أيقونتها.</p>
         </div>
 
-        <div class="help-section">
-          <h3>🛟 وسائل المساعدة (لكل فريق مرة واحدة)</h3>
+        <div class="help-grid">
+          <div class="help-section">
+            <h3 data-i18n="hg_t">👑 الجولة الذهبية</h3>
+            <p data-i18n="hg_d">اختيارية من الإعدادات. قبل النتيجة يراهن كل فريق بجزء من نقاطه على سؤال أخير: الصحيح يضيف الرهان والخطأ يخصمه.</p>
+          </div>
+          <div class="help-section">
+            <h3 data-i18n="ht_t">⚡ الشوط الفاصل</h3>
+            <p data-i18n="ht_d">عند التعادل يظهر سؤال حاسم، وأول فريق يجاوب صح يفوز.</p>
+          </div>
+        </div>
+
+        <div class="help-section help-keys">
+          <h3 data-i18n="hk_t">⌨️ اختصارات لوحة المفاتيح</h3>
           <ul>
-            <li><b>🔄 تبديل السؤال:</b> مو عاجبكم السؤال؟ بدّلوه بسؤال آخر من نفس الفئة وبنفس النقاط.</li>
-            <li><b>📞 اتصال بصديق:</b> دقيقة وحدة تتصلون فيها على شخص يعرف الإجابة — مؤقّت السؤال يتوقف خلالها.</li>
-            <li><b>✌️ جاوب جوابين:</b> مو متأكدين؟ عطوا جوابين بدل جواب واحد — إذا أحدهم صح تُحسب لكم.</li>
+            <li><kbd>Space</kbd> <span data-i18n="hk_space">عرض الإجابة</span></li>
+            <li><kbd>1</kbd> / <kbd>2</kbd> <span data-i18n="hk_12">نقاط للفريق الأول / الثاني (بعد عرض الإجابة)</span></li>
+            <li><kbd>0</kbd> <span data-i18n="hk_0">ولا أحد</span></li>
+            <li><kbd>Esc</kbd> <span data-i18n="hk_esc">إغلاق النافذة أو الرجوع للوحة</span></li>
           </ul>
         </div>
 
-        <div class="help-section">
-          <h3>⚡ شوط فاصل</h3>
-          <p>عند التعادل في النهاية، يُعرض سؤال حاسم — أول فريق يجيب صحيحاً يفوز.</p>
-        </div>
-
-        <div class="help-section">
-          <h3>👑 الجولة الذهبية (اختيارية)</h3>
-          <p>فعّلها من الإعدادات: قبل إعلان النتيجة، كل فريق يراهن بجزء من نقاطه على سؤال أخير. إجابة صحيحة <b>تضيف</b> الرهان، وخاطئة <b>تخصمه</b> — قلبة طاولة حقيقية!</p>
-        </div>
-
-        <div class="help-section">
-          <h3>⌨️ اختصارات لوحة المفاتيح</h3>
-          <ul>
-            <li><b>مسافة:</b> عرض الإجابة</li>
-            <li><b>1 / 2:</b> منح النقاط للفريق الأول / الثاني</li>
-            <li><b>0:</b> لا أحد أجاب</li>
-            <li><b>Esc:</b> إغلاق النافذة</li>
-          </ul>
-        </div>
-
-        <button class="btn btn-gold btn-block" onclick="Game.closeHelp()">فهمت، يلا نلعب! 🚀</button>
+        <button class="btn btn-gold btn-block btn-lg" type="button" onclick="Game.closeHelp()"><span data-i18n="help_ok">فهمت، يلا نلعب</span></button>
       </div>
     </div>
 
-    <!-- ============ نافذة المحرر ============ -->
-    <div id="editorModal" class="modal">
+    <!-- ============ محرر الفئات ============ -->
+    <div id="editorModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="editorH">
       <div class="modal-box editor-box">
         <div class="editor-head">
-          <h2>✏️ محرر الفئات والأسئلة</h2>
-          <button class="icon-btn" onclick="Game.closeEditor()">✕</button>
+          <div>
+            <h2 id="editorH" data-i18n="editor_h">فئاتي الخاصة</h2>
+            <p class="hint" data-i18n="editor_hint">أنشئ فئة بأسئلتك. تحتاج سؤالين على الأقل لكل قيمة (200 و400 و600). تُحفظ في حسابك، أو على هذا الجهاز إذا كنت ضيفاً.</p>
+          </div>
+          <button class="icon-btn" type="button" onclick="Game.closeEditor()" aria-label="إغلاق" data-i18n-aria="close"><svg class="ic"><use href="#i-x" /></svg></button>
         </div>
-        <p class="hint">أضف فئاتك الخاصة. تُحفظ في حسابك على هذا الجهاز.</p>
         <div class="editor-grid">
-          <div class="editor-list" id="editorList"></div>
+          <div class="editor-side">
+            <h3 class="ed-side-h" data-i18n="ed_list_h">الفئات</h3>
+            <p class="ed-side-hint" data-i18n="ed_list_hint">اضغط على فئة من فئاتك لتعديلها. الفئات الأساسية للقراءة فقط 🔒</p>
+            <div class="editor-list" id="editorList"></div>
+          </div>
           <div class="editor-form">
-            <div class="field"><label>اسم الفئة</label><input id="edName" type="text" placeholder="مثال: عواصم العالم" maxlength="24" /></div>
-            <div class="field"><label>أيقونة (إيموجي)</label><input id="edIcon" type="text" placeholder="🌐" maxlength="4" /></div>
-            <div class="ed-q-head"><span>الأسئلة (200 / 400 / 600)</span><button class="btn btn-ghost btn-sm" onclick="Game.edAddQuestion()">+ سؤال</button></div>
+            <div class="ed-row">
+              <div class="field"><label for="edName" data-i18n="ed_name">اسم الفئة</label><input id="edName" type="text" data-i18n-ph="ed_name_ph" placeholder="مثال: عضيّات الخلية" maxlength="24" autocomplete="off" /></div>
+              <div class="field ed-icon"><label for="edIcon" data-i18n="ed_icon">رمز تعبيري</label><input id="edIcon" type="text" placeholder="🧫" maxlength="4" autocomplete="off" /></div>
+            </div>
+            <div class="ed-q-head">
+              <span data-i18n="ed_qs">الأسئلة</span>
+              <span class="ed-cols" aria-hidden="true"><span data-i18n="ed_pts">النقاط</span><span data-i18n="ed_q">السؤال</span><span data-i18n="ed_a">الإجابة</span></span>
+            </div>
             <div id="edQuestions" class="ed-questions"></div>
+            <button class="btn btn-ghost btn-sm ed-add" type="button" onclick="Game.edAddQuestion()"><svg class="ic"><use href="#i-plus" /></svg><span data-i18n="ed_add">أضف سؤالاً</span></button>
             <div class="editor-actions">
-              <button class="btn btn-gold" onclick="Game.edSave()">💾 حفظ الفئة</button>
-              <button class="btn btn-ghost" onclick="Game.edClear()">جديد</button>
+              <button class="btn btn-gold" type="button" onclick="Game.edSave()"><svg class="ic"><use href="#i-check" /></svg><span data-i18n="ed_save">احفظ الفئة</span></button>
+              <button class="btn btn-ghost" type="button" onclick="Game.edClear()"><span data-i18n="ed_new">ابدأ فئة جديدة</span></button>
             </div>
             <div class="editor-io">
-              <button class="btn btn-ghost btn-sm" onclick="Game.exportData()">⬇️ تصدير</button>
-              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importFile').click()">⬆️ استيراد</button>
-              <input type="file" id="importFile" accept="application/json" style="display:none" onchange="Game.importData(event)" />
+              <span class="io-l" data-i18n="ed_io">نقل فئاتك:</span>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="Game.exportData()"><svg class="ic"><use href="#i-down" /></svg><span data-i18n="ed_export">تصدير ملف</span></button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="document.getElementById('importFile').click()"><svg class="ic"><use href="#i-up" /></svg><span data-i18n="ed_import">استيراد ملف</span></button>
+              <input type="file" id="importFile" accept="application/json,.json" hidden onchange="Game.importData(event)" />
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="questions.js"></script>
     <script src="questions-extra.js"></script>
     <script src="questions-kuwait.js"></script>
     <script src="questions-pack2.js"></script>
+    <script src="questions-bio.js"></script>
     <script src="i18n.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -516,5 +664,6 @@
     <script src="sounds.js"></script>
     <script src="effects.js"></script>
     <script src="game.js"></script>
+    <script src="bio-ui.js"></script>
   </body>
 </html>
