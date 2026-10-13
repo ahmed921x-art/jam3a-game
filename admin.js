@@ -25,10 +25,83 @@
 
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const norm = (s) => String(s || "").trim().replace(/\s+/g, " ");
+  // صورة مرفوعة من الجهاز تُحفظ كـ data URL صغيرة داخل المستند (لا يلزم Firebase Storage)
+  const DATA_IMG = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
   const safeUrl = (v) => {
-    const s = norm(v);
-    return !s || /^(https:\/\/|assets\/)[^"'<>\s]+$/i.test(s) ? s : null;
+    const raw = String(v || "").trim();
+    if (!raw) return raw;
+    if (DATA_IMG.test(raw)) return raw.length <= 400000 ? raw : null;
+    const s = norm(raw);
+    return /^(https:\/\/|assets\/)[^"'<>\s]+$/i.test(s) ? s : null;
   };
+  const MAX_DOC = 900000; // حد Firestore للمستند 1MB
+
+  // تصغير صورة من الجهاز: square = قص مربع (صورة فئة)، وإلا حد أقصى للضلع الأطول
+  function fileToDataUrl(file, max, square) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\//.test(file.type)) return reject(new Error("اختر ملف صورة"));
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let sw = img.naturalWidth, sh = img.naturalHeight, sx = 0, sy = 0, w, h;
+        if (square) {
+          const side = Math.min(sw, sh);
+          sx = (sw - side) / 2;
+          sy = (sh - side) / 2;
+          sw = sh = side;
+          w = h = Math.min(max, side);
+        } else {
+          const r = Math.min(1, max / Math.max(sw, sh));
+          w = Math.round(sw * r);
+          h = Math.round(sh * r);
+        }
+        const cv = document.createElement("canvas");
+        cv.width = w;
+        cv.height = h;
+        cv.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+        let out = cv.toDataURL("image/webp", 0.82);
+        if (!out.startsWith("data:image/webp")) out = cv.toDataURL("image/jpeg", 0.82);
+        resolve(out);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("تعذّر قراءة الصورة"));
+      };
+      img.src = url;
+    });
+  }
+  function pickImage(max, square) {
+    return new Promise((resolve) => {
+      const inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = "image/*";
+      inp.onchange = async () => {
+        try {
+          resolve(await fileToDataUrl(inp.files[0], max, square));
+        } catch (e) {
+          toast(e.message);
+          resolve(null);
+        }
+      };
+      inp.click();
+    });
+  }
+  // حقل الرابط يحتفظ بالصورة المرفوعة في dataset بدل عرض نص طويل
+  function setImgField(input, value) {
+    const v = value || "";
+    if (!input.dataset.ph) input.dataset.ph = input.placeholder;
+    if (v.startsWith("data:")) {
+      input.dataset.data = v;
+      input.value = "";
+      input.placeholder = "✓ صورة مرفوعة من جهازك";
+    } else {
+      delete input.dataset.data;
+      input.value = v;
+      input.placeholder = input.dataset.ph;
+    }
+  }
+  const imgFieldValue = (input) => input.dataset.data || norm(input.value);
 
   function toast(msg) {
     const t = $("#toast");
@@ -39,12 +112,15 @@
   }
 
   // ---------------- الدخول والصلاحيات ----------------
-  function gate(title, msg, showLogin) {
+  function gate(title, msg, showLogin, showVerify) {
     $("#app").hidden = true;
     $("#gate").hidden = false;
     $("#gateTitle").textContent = title;
     $("#gateMsg").textContent = msg;
     $("#gateLogin").hidden = !showLogin;
+    $("#emailForm").hidden = !showLogin;
+    $("#gateOr").hidden = !showLogin;
+    $("#resendVerify").hidden = !showVerify;
   }
 
   if (!auth || !db) {
@@ -75,15 +151,64 @@
   });
   $("#admSignOut").addEventListener("click", () => auth.signOut());
 
+  const AUTH_MSG = {
+    "auth/invalid-credential": "الإيميل أو كلمة السر غير صحيحة.",
+    "auth/wrong-password": "الإيميل أو كلمة السر غير صحيحة.",
+    "auth/user-not-found": "ما فيه حساب بهذا الإيميل. اطلب من المالك إنشاءه.",
+    "auth/invalid-email": "صيغة الإيميل غير صحيحة.",
+    "auth/too-many-requests": "محاولات كثيرة. انتظر قليلاً ثم حاول.",
+    "auth/operation-not-allowed": "الدخول بالإيميل غير مفعّل في Firebase (Authentication ← Sign-in method ← Email/Password).",
+    "auth/configuration-not-found": "الدخول بالإيميل غير مفعّل في Firebase (Authentication ← Sign-in method ← Email/Password).",
+    "auth/network-request-failed": "لا يوجد اتصال بالإنترنت.",
+  };
+  $("#emailForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = norm($("#loginEmail").value);
+    const pass = $("#loginPass").value;
+    $("#gateMsg").textContent = "جاري الدخول…";
+    try {
+      await auth.signInWithEmailAndPassword(email, pass);
+    } catch (err) {
+      $("#gateMsg").textContent = AUTH_MSG[err.code] || "تعذّر الدخول (" + (err.code || err.message) + ").";
+    }
+  });
+  $("#forgotPass").addEventListener("click", async () => {
+    const email = norm($("#loginEmail").value);
+    if (!email) return ($("#gateMsg").textContent = "اكتب إيميلك أولاً ثم اضغط «نسيت كلمة السر».");
+    try {
+      await auth.sendPasswordResetEmail(email);
+      $("#gateMsg").textContent = "أرسلنا رابط تعيين كلمة السر إلى " + email + " (تفقّد البريد غير المرغوب).";
+    } catch (err) {
+      $("#gateMsg").textContent = AUTH_MSG[err.code] || "تعذّر الإرسال (" + (err.code || err.message) + ").";
+    }
+  });
+  $("#resendVerify").addEventListener("click", async () => {
+    try {
+      await auth.currentUser.sendEmailVerification();
+      toast("📧 أرسلنا رابط التأكيد");
+    } catch (err) {
+      toast(AUTH_MSG[err.code] || "تعذّر الإرسال، حاول بعد قليل");
+    }
+  });
+
   auth.onAuthStateChanged(async (u) => {
     $("#admUser").hidden = !u;
     $("#admSignOut").hidden = !u;
     if (!u) {
       me = null;
-      gate("لوحة الأدمن", "سجّل دخولك بحساب Google المسجّل كمشرف.", true);
+      gate("لوحة الأدمن", "سجّل دخولك بالإيميل المسجّل كمشرف.", true);
       return;
     }
     $("#admUser").textContent = u.email;
+    // حسابات الإيميل/كلمة السر تحتاج تأكيد الإيميل (قواعد Firestore تشترطه)
+    if (!u.emailVerified) {
+      try {
+        await u.sendEmailVerification();
+      } catch {}
+      gate("أكّد إيميلك", `أرسلنا رابط تأكيد إلى ${u.email}. افتحه من بريدك، ثم حدّث هذه الصفحة.`, false, true);
+      $("#admSignOut").hidden = false;
+      return;
+    }
     gate("لوحة الأدمن", "جاري التحقق من الصلاحيات…", false);
     try {
       const snap = await db.collection("config").doc("admins").get();
@@ -161,17 +286,28 @@
       <button type="button" class="adm-imgbtn" aria-expanded="false" aria-label="صور السؤال والإجابة" title="صور السؤال والإجابة">🖼</button>
       <button type="button" class="adm-rm" aria-label="حذف السؤال">✕</button>
       <div class="adm-q-imgs" hidden>
-        <label><span>صورة السؤال</span><input class="qi" type="url" dir="ltr" placeholder="assets/questions/… أو https://…" /></label>
-        <label><span>صورة الإجابة</span><input class="ai" type="url" dir="ltr" placeholder="assets/questions/… أو https://…" /></label>
+        <div class="adm-q-img"><span>صورة السؤال</span><div class="aqi-row"><input class="qi" type="url" dir="ltr" placeholder="رابط، أو ارفع من جهازك" /><button type="button" class="btn btn-ghost btn-sm adm-up" data-for="qi">📤 رفع</button></div></div>
+        <div class="adm-q-img"><span>صورة الإجابة</span><div class="aqi-row"><input class="ai" type="url" dir="ltr" placeholder="رابط، أو ارفع من جهازك" /><button type="button" class="btn btn-ghost btn-sm adm-up" data-for="ai">📤 رفع</button></div></div>
       </div>`;
     row.querySelector("select").value = String(points);
     row.querySelector(".q").value = q;
     row.querySelector(".a").value = a;
-    row.querySelector(".qi").value = img || "";
-    row.querySelector(".ai").value = aImg || "";
+    setImgField(row.querySelector(".qi"), img);
+    setImgField(row.querySelector(".ai"), aImg);
     const imgs = row.querySelector(".adm-q-imgs");
     const imgBtn = row.querySelector(".adm-imgbtn");
-    const syncImgBtn = () => imgBtn.classList.toggle("has", !!(row.querySelector(".qi").value.trim() || row.querySelector(".ai").value.trim()));
+    const syncImgBtn = () => imgBtn.classList.toggle("has", !!(imgFieldValue(row.querySelector(".qi")) || imgFieldValue(row.querySelector(".ai"))));
+    row.querySelectorAll(".adm-up").forEach((b) =>
+      b.addEventListener("click", async () => {
+        const url = await pickImage(900, false);
+        if (!url) return;
+        setImgField(row.querySelector("." + b.dataset.for), url);
+        syncImgBtn();
+        changed();
+        toast("🖼 تم رفع الصورة. احفظ الفئة لنشرها");
+      })
+    );
+    row.querySelectorAll(".qi, .ai").forEach((inp) => inp.addEventListener("input", () => setImgField(inp, inp.value)));
     imgBtn.addEventListener("click", () => {
       imgs.hidden = !imgs.hidden;
       imgBtn.setAttribute("aria-expanded", !imgs.hidden);
@@ -222,7 +358,7 @@
     $("#fName").value = c.name || "";
     $("#fIcon").value = c.icon || "";
     $("#fGroup").value = c.group || "general";
-    $("#fImg").value = c.img || "";
+    setImgField($("#fImg"), c.img || "");
     $("#delCat").hidden = false;
     fillQuestions(c.questions || []);
     previewImg();
@@ -235,14 +371,14 @@
     const questions = $$("#qList .adm-q")
       .map((r) => {
         const x = { points: +r.querySelector("select").value, q: norm(r.querySelector(".q").value), a: norm(r.querySelector(".a").value) };
-        const img = norm(r.querySelector(".qi").value);
-        const aImg = norm(r.querySelector(".ai").value);
+        const img = imgFieldValue(r.querySelector(".qi"));
+        const aImg = imgFieldValue(r.querySelector(".ai"));
         if (img) x.img = img;
         if (aImg) x.aImg = aImg;
         return x;
       })
       .filter((x) => x.q || x.a);
-    return { name: norm($("#fName").value), icon: norm($("#fIcon").value) || "📁", group: $("#fGroup").value, img: norm($("#fImg").value), questions };
+    return { name: norm($("#fName").value), icon: norm($("#fIcon").value) || "📁", group: $("#fGroup").value, img: imgFieldValue($("#fImg")), questions };
   }
 
   function validate(d) {
@@ -264,6 +400,7 @@
     const badImg = d.questions.find((x) => safeUrl(x.img) === null || safeUrl(x.aImg) === null);
     if (badImg) return `رابط صورة غير صالح في السؤال «${badImg.q}» — لازم يبدأ بـ https:// أو assets/`;
     if (d.questions.length > 90) return "الحد الأقصى 90 سؤالاً للفئة.";
+    if (JSON.stringify(d).length > MAX_DOC) return "الصور المرفوعة كبيرة على فئة وحدة. احذف بعض صور الأسئلة أو استخدم روابط بدلها.";
     return "";
   }
 
@@ -276,7 +413,7 @@
   }
 
   function previewImg() {
-    const url = safeUrl($("#fImg").value);
+    const url = safeUrl(imgFieldValue($("#fImg")));
     const box = $("#fImgPrev");
     box.innerHTML = url ? `<img src="${esc(url)}" alt="" />` : `<span>${esc(norm($("#fIcon").value) || "📁")}</span>`;
   }
@@ -288,8 +425,23 @@
 
   ["#fName", "#fIcon", "#fGroup"].forEach((s) => $(s).addEventListener("input", changed));
   $("#fImg").addEventListener("input", () => {
+    setImgField($("#fImg"), $("#fImg").value);
     changed();
     previewImg();
+  });
+  // الضغط على مربع الصورة يرفع صورة من الجهاز (تُقص مربعة 256px)
+  $("#fImgPrev").addEventListener("click", async () => {
+    const url = await pickImage(256, true);
+    if (!url) return;
+    setImgField($("#fImg"), url);
+    previewImg();
+    changed();
+    toast("🖼 تم رفع صورة الفئة. احفظ لنشرها");
+  });
+  $("#fImgClear").addEventListener("click", () => {
+    setImgField($("#fImg"), "");
+    previewImg();
+    changed();
   });
   $("#fIcon").addEventListener("input", previewImg);
   $("#qList").addEventListener("input", changed);
@@ -398,13 +550,24 @@
       row.innerHTML = `
         <span class="ai-ic">${esc(c.icon)}</span>
         <div class="bi-txt"><span class="ai-nm">${esc(c.name)}</span><span class="ai-meta">${esc(GROUP_LABEL[c.group] || "")} · ${c.questions.length} سؤال · <code dir="ltr">${esc(c.id)}</code></span></div>
-        <input class="bi-img" type="url" dir="ltr" placeholder="رابط صورة (اختياري)" aria-label="رابط صورة ${esc(c.name)}" value="${esc(overrides.images[c.id] || "")}" />
+        <div class="bi-imgwrap"><input class="bi-img" type="url" dir="ltr" placeholder="رابط صورة (اختياري)" aria-label="رابط صورة ${esc(c.name)}" /><button type="button" class="btn btn-ghost btn-sm bi-up" aria-label="رفع صورة ${esc(c.name)}">📤</button></div>
         <label class="bi-toggle"><input type="checkbox" ${hidden ? "" : "checked"} /> <span>${hidden ? "مخفية" : "ظاهرة"}</span></label>`;
-      row.querySelector(".bi-img").addEventListener("input", (e) => {
-        const v = norm(e.target.value);
+      const biImg = row.querySelector(".bi-img");
+      setImgField(biImg, overrides.images[c.id] || "");
+      biImg.addEventListener("input", () => {
+        setImgField(biImg, biImg.value);
+        const v = imgFieldValue(biImg);
         if (v) overrides.images[c.id] = v;
         else delete overrides.images[c.id];
         dirty = true;
+      });
+      row.querySelector(".bi-up").addEventListener("click", async () => {
+        const url = await pickImage(256, true);
+        if (!url) return;
+        overrides.images[c.id] = url;
+        setImgField(biImg, url);
+        dirty = true;
+        toast("🖼 تم رفع الصورة. اضغط «حفظ التغييرات» لنشرها");
       });
       row.querySelector(".bi-toggle input").addEventListener("change", (e) => {
         const set = new Set(overrides.hidden);
@@ -421,6 +584,7 @@
   $("#saveOverrides").addEventListener("click", async () => {
     const bad = Object.entries(overrides.images).find(([, v]) => safeUrl(v) === null);
     if (bad) return toast(`رابط صورة غير صالح في «${bad[0]}» — لازم يبدأ بـ https:// أو assets/`);
+    if (JSON.stringify(overrides).length > MAX_DOC) return toast("مجموع صور الفئات الأساسية كبير. استخدم روابط لبعضها بدل الرفع.");
     const visible = BUILTIN.length - overrides.hidden.length + cats.length;
     if (visible < 4) return toast("لازم تبقى 4 فئات ظاهرة على الأقل");
     try {

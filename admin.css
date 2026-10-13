@@ -474,3 +474,99 @@
   .adm-imgbtn { grid-area: img; }
   .adm-q-imgs { grid-area: im; grid-template-columns: 1fr; }
 }
+
+/* رفع الصور */
+.adm-img-pick {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+button.adm-img-prev {
+  border: 0;
+  cursor: pointer;
+  color: var(--text);
+  transition: transform 0.12s, filter 0.15s;
+}
+button.adm-img-prev:hover {
+  filter: brightness(1.15);
+  transform: scale(1.04);
+}
+.adm-img-clear {
+  min-height: 28px;
+  padding: 2px 6px;
+  font-size: 12.5px;
+}
+.adm-q-img {
+  display: grid;
+  gap: 2px;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.aqi-row,
+.bi-imgwrap {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.aqi-row input,
+.bi-imgwrap input {
+  flex: 1;
+  min-width: 0;
+}
+.adm-q-imgs .aqi-row input {
+  min-height: 40px;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--text);
+}
+input[data-data] {
+  border-color: color-mix(in srgb, var(--success) 50%, transparent) !important;
+}
+input[data-data]::placeholder {
+  color: var(--success);
+}
+@media (max-width: 720px) {
+  .adm-bi .bi-imgwrap {
+    grid-column: 1 / -1;
+    order: 4;
+  }
+}
+
+/* الدخول بالإيميل */
+.adm-login {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+.adm-login input {
+  min-height: var(--tap);
+  font-size: 16px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--ink-0);
+  color: var(--text);
+}
+.adm-login input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.adm-gate .auth-divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-3);
+  font-size: 14px;
+}
+.adm-gate .auth-divider::before,
+.adm-gate .auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line-2);
+}

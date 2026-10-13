@@ -30,7 +30,7 @@ service cloud.firestore {
         && d.name is string && d.name.size() > 0 && d.name.size() <= 60
         && d.icon is string && d.icon.size() <= 16
         && d.group in ['bio', 'kuwait', 'general']
-        && (!('img' in d) || (d.img is string && d.img.size() <= 500))
+        && (!('img' in d) || (d.img is string && d.img.size() <= 400000))
         && d.questions is list && d.questions.size() >= 6 && d.questions.size() <= 90;
     }
     function validOverrides(d) {
