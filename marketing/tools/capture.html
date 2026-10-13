@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<!-- يشغّل اللعبة في iframe ويوصلها لحالة معيّنة (?s=…) لالتقاط صورة بمتصفح headless. انظر marketing/README.md -->
+<html lang="ar">
+<head>
+<meta charset="UTF-8" />
+<style>
+  html, body { margin: 0; height: 100%; background: #0f1013; overflow: hidden; }
+  iframe { border: 0; width: var(--w, 390px); height: var(--h, 844px); display: block; }
+</style>
+</head>
+<body>
+<iframe id="f"></iframe>
+<script>
+  const P = new URLSearchParams(location.search);
+  const S = P.get("s") || "landing";
+  const LANG = P.get("lang") || "ar";
+  const MODE = P.get("mode") || "dark";
+  try {
+    localStorage.clear();
+    localStorage.setItem("sj_seen_help", "1");
+    localStorage.setItem("sj_lang", LANG);
+    localStorage.setItem("sj_mode", MODE);
+    localStorage.setItem("sj_settings", JSON.stringify({ sound: false, random: false, golden: true, catCount: 6 }));
+  } catch {}
+  const f = document.getElementById("f");
+  f.style.setProperty("--w", (P.get("w") || 390) + "px");
+  f.style.setProperty("--h", (P.get("h") || 844) + "px");
+  f.src = "../../index.html?capture=" + S;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  f.onload = async () => {
+    const w = f.contentWindow;
+    const d = w.document;
+    for (let i = 0; i < 50 && !(w.eval("typeof Game") === "object" && d.querySelector(".cat-tile")); i++) await wait(100);
+    d.querySelectorAll(".modal.active").forEach((m) => m.classList.remove("active"));
+    // لا حركة في اللقطات
+    const st = d.createElement("style");
+    st.textContent = "*,*::before,*::after{animation:none!important;transition:none!important} #fxOverlay{display:none!important} .toast{display:none!important}";
+    d.head.appendChild(st);
+    const G = w.eval("Game");
+    w.confirm = () => true; // «إنهاء اللعبة» يطلب تأكيداً
+    await wait(1800); // ننتظر catalog.js يجلب Firestore ويعيد رسم المنتقي
+    const byName = (n) => [...d.querySelectorAll(".cat-tile")].find((t) => t.getAttribute("aria-label") === n);
+    const PICK = ["الخلية", "الوراثة والحمض النووي", "BioTechnology", "الأحياء الدقيقة", "الكويت", "علوم عامة"];
+    async function setup() {
+      G.playClick();
+      d.getElementById("team1").value = "فريق الخلايا";
+      d.getElementById("team2").value = "فريق الجينات";
+      PICK.forEach((n) => byName(n) && byName(n).click());
+      await wait(200);
+    }
+    async function board(plays = 5) {
+      await setup();
+      d.getElementById("startBtn").click();
+      await wait(300);
+      const order = [0, 7, 12, 19, 3, 25, 30];
+      for (let k = 0; k < plays; k++) {
+        const c = d.querySelectorAll(".cell")[order[k]];
+        if (!c || c.classList.contains("done")) continue;
+        c.click();
+        await wait(60);
+        G.showAnswer();
+        G.openJudge();
+        G.award(k % 3 === 2 ? 2 : 1);
+        await wait(80);
+      }
+      w.scrollTo(0, 0);
+    }
+    async function openQ(idx) {
+      await board(4);
+      d.querySelectorAll(".cell")[idx].click();
+      await wait(250);
+    }
+    if (S === "setup") {
+      await setup();
+      const y = d.getElementById("stepCats").getBoundingClientRect().top + w.scrollY - 70;
+      w.scrollTo(0, y);
+    } else if (S === "board") {
+      await board(5);
+    } else if (S === "question") {
+      await openQ(+(P.get("q") || 2));
+    } else if (S === "answer") {
+      await openQ(+(P.get("q") || 2));
+      G.showAnswer();
+    } else if (S === "judge") {
+      await openQ(+(P.get("q") || 2));
+      G.showAnswer();
+      G.openJudge();
+    } else if (S === "lifeline") {
+      await openQ(+(P.get("q") || 2));
+      d.querySelector("#qT1Lifelines .lifeline:nth-child(2)").click();
+      await wait(100);
+      G.lifelineStart();
+      await wait(3200);
+    } else if (S === "golden") {
+      await board(5);
+      G.finish();
+      await wait(300);
+      const b = d.querySelectorAll(".wager-chips[data-for=wager1] button")[1];
+      b && b.click();
+    } else if (S === "result") {
+      await board(7);
+      for (let i = 0; i < 40; i++) {
+        const c = d.querySelector(".cell:not(.done)");
+        if (!c) break;
+        c.click();
+        await wait(20);
+        G.showAnswer();
+        G.openJudge();
+        G.award(i % 4 === 3 ? 2 : 1);
+        await wait(20);
+      }
+      await wait(1200);
+      if (d.getElementById("goldenModal").classList.contains("active")) {
+        G.goldenShowQuestion();
+        G.goldenReveal();
+        G.goldenSetResult(1, true);
+        G.goldenSetResult(2, false);
+        G.goldenApply();
+        await wait(1500);
+      }
+      w.scrollTo(0, 0);
+    }
+    if (S === "landing") {
+      await wait(1500);
+      const cats = w.eval("CATEGORIES");
+      d.getElementById("statCats").textContent = cats.length;
+      d.getElementById("statQ").textContent = cats.reduce((n, c) => n + c.questions.length, 0);
+      d.getElementById("statGames").textContent = "0";
+    }
+    document.title = "ready";
+  };
+</script>
+</body>
+</html>
