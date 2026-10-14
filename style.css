@@ -875,7 +875,7 @@ body.in-game .topbar {
 }
 @media (max-width: 400px) {
   .cats-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* minmax يمنع تمدد الشبكة خارج الشاشة */
   }
 }
 .cat-tile {
@@ -937,6 +937,8 @@ body.in-game .topbar {
 }
 .cat-tile .nm {
   grid-area: nm;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-weight: 700;
   font-size: 15px;
   line-height: 1.35;

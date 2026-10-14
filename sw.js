@@ -1,9 +1,9 @@
 /* بايو: cache only this GitHub Pages scope; refresh assets online. */
-const CACHE = "bio-v8";
+const CACHE = "bio-v11";
 const ASSETS = [
   "./", "./index.html", "./style.css", "./landing.css",
   "./questions.js", "./questions-extra.js", "./questions-kuwait.js", "./questions-pack2.js",
-  "./questions-bio.js",
+  "./questions-bio.js", "./gaming-pack.js", "./match-logic.js", "./match.js", "./match.css",
   "./i18n.js", "./firebase-config.js", "./auth.js", "./sounds.js", "./effects.js",
   "./catalog.js", "./game-logic.js", "./game.js", "./bio-ui.js", "./manifest.json", "./icon.svg", "./og-image.svg",
   "./assets/logo-full.png", "./assets/logo-mark.png", "./assets/favicon-48.png",

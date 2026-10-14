@@ -9,6 +9,13 @@ const FX = (() => {
   const PALETTE = ["#f9e09b", "#c3e813", "#e4a6f7", "#9fe0ec", "#e8949d"];
   const reduceMQ = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
   const reduced = () => reduceMQ.matches;
+  // تُوقف الخلفية المتحركة أثناء تشغيل فيديو/أغنية حتى لا تنافسه على المعالج
+  let bgPaused = false;
+  let bgRefresh = () => {};
+  function pauseBackground(v) {
+    bgPaused = !!v;
+    bgRefresh();
+  }
 
   function hexPath(ctx, x, y, r, rot) {
     ctx.beginPath();
@@ -91,9 +98,10 @@ const FX = (() => {
     function startStop() {
       if (raf) cancelAnimationFrame(raf);
       raf = null;
-      if (!reduced() && !document.hidden) loop();
+      if (!reduced() && !document.hidden && !bgPaused) loop();
       else draw();
     }
+    bgRefresh = startStop;
 
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", startStop);
@@ -189,5 +197,5 @@ const FX = (() => {
     })();
   }
 
-  return { starfield, confettiBurst, celebrate };
+  return { starfield, confettiBurst, celebrate, pauseBackground };
 })();

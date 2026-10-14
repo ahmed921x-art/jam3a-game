@@ -30,11 +30,20 @@
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="manifest" href="manifest.json" />
 
+    <!-- اتصال مبكر بمصادر وسائط المباراة (أول صورة/مقطع يبدأ أسرع) -->
+    <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+    <link rel="preconnect" href="https://www.youtube.com" />
+    <link rel="preconnect" href="https://i.ytimg.com" />
+    <link rel="preconnect" href="https://shared.akamai.steamstatic.com" />
+    <link rel="preconnect" href="https://www.smashbros.com" />
+    <link rel="preconnect" href="https://upload.wikimedia.org" />
+    <link rel="preconnect" href="https://s4.anilist.co" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="landing.css" />
+    <link rel="stylesheet" href="match.css" />
   </head>
   <body data-theme="royal">
     <!-- أيقونات الواجهة (SVG sprite) -->
@@ -102,7 +111,7 @@
             <h1 class="hero-title" id="heroTitle"><span class="ht-ar">بايو</span><span class="ht-en" lang="en">BIO</span></h1>
             <p class="hero-tagline" data-i18n="tagline">من الخلية إلى المجرّة: أسئلة في الأحياء والعلوم والمعلومات العامة، وفريقكم يجمع النقاط.</p>
             <div class="hero-cta">
-              <button class="btn btn-gold btn-lg" type="button" onclick="Game.playClick()">
+              <button class="btn btn-gold btn-lg" type="button" onclick="Match.openSetup()">
                 <svg class="ic"><use href="#i-play" /></svg><span data-i18n="play_now">ابدأ لعبة جديدة</span>
               </button>
               <button class="btn btn-ghost btn-lg" type="button" onclick="Game.openHelp()"><span data-i18n="how_play">طريقة اللعب</span></button>
@@ -140,7 +149,7 @@
             <h2 data-i18n="cta_h">جاهزين للتحدي؟</h2>
             <p data-i18n="cta_p">تكفي شاشة واحدة ومقدّم يقرأ الأسئلة. يمكن تثبيت اللعبة كتطبيق على الجوال.</p>
           </div>
-          <button class="btn btn-gold btn-lg" type="button" onclick="Game.playClick()"><svg class="ic"><use href="#i-play" /></svg><span data-i18n="play_now">ابدأ لعبة جديدة</span></button>
+          <button class="btn btn-gold btn-lg" type="button" onclick="Match.openSetup()"><svg class="ic"><use href="#i-play" /></svg><span data-i18n="play_now">ابدأ لعبة جديدة</span></button>
         </div>
 
         <footer class="footer"><span>بايو · BIO</span> <span aria-hidden="true">•</span> <span data-i18n="footer">لعبة مسابقات علمية للأصدقاء والفصول والنوادي</span> <span aria-hidden="true">•</span> <span>© 2026</span></footer>
@@ -333,6 +342,11 @@
         </div>
       </section>
 
+      <!-- ============ مباراة «سين وجيم» (match.js يبني المحتوى) ============ -->
+      <section id="matchSetupScreen" class="screen ms-screen" aria-label="إعداد المباراة"></section>
+      <section id="matchBoardScreen" class="screen mb-screen" aria-label="لوحة المباراة"></section>
+      <section id="matchResultScreen" class="screen" aria-label="نتيجة المباراة"></section>
+
       <!-- ============ النتيجة ============ -->
       <section id="resultScreen" class="screen" aria-labelledby="resultH">
         <div class="result-wrap">
@@ -454,6 +468,11 @@
           </aside>
         </div>
       </div>
+    </div>
+
+    <!-- ============ سؤال المباراة ============ -->
+    <div id="mqModal" class="modal fullscreen" role="dialog" aria-modal="true" aria-label="السؤال">
+      <div class="modal-box mq-box" id="mqBox"></div>
     </div>
 
     <!-- ============ الجولة الذهبية ============ -->
@@ -660,6 +679,7 @@
     <script src="questions-kuwait.js"></script>
     <script src="questions-pack2.js"></script>
     <script src="questions-bio.js"></script>
+    <script src="gaming-pack.js"></script>
     <script src="i18n.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -671,6 +691,8 @@
     <script src="effects.js"></script>
     <script src="game-logic.js"></script>
     <script src="game.js"></script>
+    <script src="match-logic.js"></script>
+    <script src="match.js"></script>
     <script src="bio-ui.js"></script>
   </body>
 </html>

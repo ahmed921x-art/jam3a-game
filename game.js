@@ -109,9 +109,13 @@ const Game = (() => {
   };
 
   function show(scr) {
-    Object.values(screens).forEach((s) => s.classList.remove("active"));
-    screens[scr].classList.add("active");
-    document.body.classList.toggle("in-game", scr === "board");
+    showScreen(screens[scr].id, scr === "board");
+  }
+  // يُستخدم أيضاً من match.js: يخفي كل الشاشات (الكلاسيكية والمباراة) ويُظهر واحدة
+  function showScreen(id, inGame = false) {
+    $$(".screen").forEach((s) => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    document.body.classList.toggle("in-game", inGame);
     window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }
 
@@ -525,6 +529,7 @@ const Game = (() => {
   // تُستدعى من catalog.js عندما تتغيّر فئات لوحة الأدمن (تتغير الفهارس، فنلغي الاختيار)
   function refreshCatalog() {
     state.selectedCats = [];
+    if (window.Match) Match.refreshCats();
     buildCatPicker();
     updateLandingStats();
     buildMarquee();
@@ -534,6 +539,7 @@ const Game = (() => {
     const grid = $("#catsGrid");
     grid.innerHTML = "";
     allCats().forEach((cat, i) => {
+      if (!BioRules.validCategory(cat)) return; // فئات لوحة 100–500 (حزمة الألعاب) خاصة بالمباراة الجديدة
       const tile = document.createElement("div");
       tile.className = "cat-tile";
       tile.dataset.index = i;
@@ -1429,6 +1435,18 @@ const Game = (() => {
     show("result");
   }
 
+  // نتيجة مباراة «سين وجيم» (match.js) → نفس الإحصائيات والسجل والإنجازات
+  function recordMatch(r) {
+    const st = getStats();
+    st.games = (st.games || 0) + 1;
+    st.best = Math.max(st.best || 0, r.s1, r.s2);
+    st.q = (st.q || 0) + (Number.isFinite(r.questions) ? r.questions : 0);
+    saveStats(st);
+    addHistory({ date: Date.now(), t1: r.t1, s1: r.s1, t2: r.t2, s2: r.s2, winner: r.s1 === r.s2 ? 0 : r.s1 > r.s2 ? 1 : 2 });
+    const fresh = checkAchievements();
+    if (fresh.length) setTimeout(() => toast(loc("🏅 إنجاز جديد: ", "🏅 New achievement: ") + achName(fresh[0])), 1400);
+  }
+
   function playAgain() {
     clearSave();
     state.phase = "setup";
@@ -1533,6 +1551,7 @@ const Game = (() => {
     buildCatPicker();
     updateLandingStats();
     buildMarquee();
+    if (window.Match) Match.refreshCats();
   }
   function renderEditorList() {
     const list = $("#editorList");
@@ -1822,7 +1841,7 @@ const Game = (() => {
       if (e.key === "Escape") {
         if (state.current) askClose();
         $$(".modal.active").forEach((m) => {
-          if (m.id !== "qModal" && m.id !== "goldenModal") m.classList.remove("active");
+          if (!["qModal", "goldenModal", "mqModal"].includes(m.id)) m.classList.remove("active");
         });
       }
       if (!state.current) return;
@@ -1852,6 +1871,7 @@ const Game = (() => {
     openHelp, closeHelp, shareResult, askClose, restartTimer,
     backToQuestion, openJudge, backToAnswer, lifelineStart, lifelineCancel,
     goldenShowQuestion, goldenReveal, goldenSetResult, goldenApply, refreshCatalog,
+    showScreen, recordMatch, toast, categories: allCats,
   };
 })();
 
