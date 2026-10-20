@@ -838,3 +838,21 @@ body:has(#mqModal.active) .toast.show { transform: translate(-50%, 0); }
   clip-path: none !important;
   visibility: hidden;
 }
+
+/* المتصفح رفض التشغيل من الزر: اللمسة تمر للمشغّل نفسه، والغطاء يبقى ظاهراً */
+.mq-yt-tap {
+  position: absolute;
+  inset: auto 0 0;
+  display: none;
+  padding: 10px 12px;
+  text-align: center;
+  font-weight: 800;
+  color: var(--on-color, #111);
+  background: var(--accent);
+  pointer-events: none;
+  z-index: 3;
+}
+.mq-yt.tap .mq-yt-tap { display: block; }
+.yt-dock:has(.mq-yt.tap) { pointer-events: auto; cursor: pointer; }
+.yt-dock .mq-yt.tap .ytd-over,
+.yt-dock .mq-yt.tap .ytd-over * { pointer-events: none; }

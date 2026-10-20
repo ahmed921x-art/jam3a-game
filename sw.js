@@ -1,5 +1,5 @@
 /* بايو: cache only this GitHub Pages scope; refresh assets online. */
-const CACHE = "bio-v17";
+const CACHE = "bio-v18";
 const ASSETS = [
   "./", "./index.html", "./style.css", "./landing.css",
   "./admin.html", "./admin.css", "./admin.js",

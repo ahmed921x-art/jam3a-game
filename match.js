@@ -637,6 +637,7 @@ const Match = (() => {
           <div class="mq-yt-shield" aria-hidden="true"></div>
           ${q.type === "audio" ? `<div class="mq-yt-cover" aria-hidden="true"><span class="mqa-eq">${EQ}</span><span class="mq-idle">🎧 ${esc(L("استمعوا وخمّنوا", "Listen and guess"))}</span><span class="mq-load">⏳ ${esc(L("جاري تحميل المقطع…", "Loading the clip…"))}</span></div>` : `<div class="mq-yt-pause" aria-hidden="true"><b>▶</b><span class="mq-idle">${esc(L("اضغطوا تشغيل وخمّنوا", "Press play and guess"))}</span><span class="mq-load">⏳ ${esc(L("جاري تحميل المقطع…", "Loading the clip…"))}</span></div>`}
           <div class="mq-yt-msg" id="mqYtMsg">${esc(L("جاري تحميل المقطع من YouTube…", "Loading from YouTube…"))}</div>
+          <div class="mq-yt-tap" aria-hidden="true">👆 ${esc(L("اضغطوا على المقطع نفسه لتشغيله", "Tap the clip itself to play it"))}</div>
         </div>${controlsHTML(false)}`;
     }
     if (q.type === "audio") return `<audio id="mqAudio" preload="auto" src="${esc(q.audio)}"></audio>${controlsHTML(true)}`;
@@ -1122,44 +1123,51 @@ const Match = (() => {
     let ready = false;
     let dead = false;
     let poll = null;
-    let warming = false; // تحميل مسبق صامت حتى لا يعلق المقطع أول ما يشتغل
+    let stall = null;
+    const slot = () => $("#mqYt");
+    // وضع «اضغطوا على المقطع»: بعض المتصفحات (Brave) ترفض التشغيل إذا جاء الأمر من الصفحة،
+    // فنمرّر اللمسة للمشغّل نفسه (يبقى الغطاء ظاهراً فلا ينكشف العنوان)
+    const tapMode = (on) => slot()?.classList.toggle("tap", on);
     const a = {
       start: spec.start,
       limit: spec.limit,
       vol: 0.9,
       wantPlay: false,
       pending: false,
-      loading: () => a.pending || (ready && !warming && p.getPlayerState() === 3),
-      end: () => (a.limit > a.start ? a.limit : ready ? p.getDuration() : 0),
-      time: () => (ready ? p.getCurrentTime() : a.start),
-      playing: () => ready && !warming && p.getPlayerState() === 1,
+      cued: false, // المقطع وصل للمشغّل المشترك (قبلها getCurrentTime يخص المقطع السابق)
       soundOnPlay: false,
-      loaded: false, // وصل المقطع الجديد للمشغّل المشترك (قبلها getCurrentTime يخص المقطع السابق)
+      loading: () => a.pending || (ready && a.cued && p.getPlayerState() === 3),
+      end: () => (a.limit > a.start ? a.limit : ready && a.cued ? p.getDuration() : 0),
+      time: () => (ready && a.cued ? p.getCurrentTime() : a.start),
+      playing: () => ready && a.cued && p.getPlayerState() === 1,
       play: () => {
         a.pending = true;
-        if (!ready) return void (a.wantPlay = true);
-        if (!a.loaded) {
-          // ما زال يحمّل: نعيد طلبه من بداية المقطع الآمنة بدل seekTo على المقطع السابق
-          warming = false;
-          p.mute();
-          a.soundOnPlay = !spec.mute;
-          p.loadVideoById({ videoId: id, startSeconds: a.start });
-          return;
-        }
+        if (!ready || !a.cued) return void (a.wantPlay = true);
+        a.wantPlay = false;
         const t = p.getCurrentTime();
-        if (warming || p.getPlayerState() === 0 || t < a.start - 1 || (a.limit && t >= a.limit - 0.3)) p.seekTo(a.start, true);
-        warming = false;
-        // Brave (وغيره) يمنع تشغيل المقطع بالصوت إذا جاء الأمر من الصفحة لا من داخل مشغّل YouTube،
-        // لكنه يسمح بالتشغيل الصامت ثم رفع الصوت أثناء التشغيل: نبدأ صامتين ونرفع الصوت عند الحالة 1
+        const st = p.getPlayerState();
+        if (st === 0 || st === 5 || t < a.start - 1 || (a.limit && t >= a.limit - 0.3)) p.seekTo(a.start, true);
+        // نبدأ صامتين ونرفع الصوت عند بدء التشغيل: التشغيل بالصوت من خارج المشغّل يُمنع في Brave
         p.mute();
         a.soundOnPlay = !spec.mute;
         p.playVideo();
+        clearTimeout(stall);
+        // بعد 3 ثوانٍ: إذا كان يحمّل (3) ننتظر، وإذا رُفض التشغيل (-1/5/2) نطلب لمس المقطع نفسه
+        const check = () => {
+          if (dead || !a.pending) return;
+          const s2 = p.getPlayerState();
+          if (s2 === 3 || s2 === 1) stall = setTimeout(check, 1500);
+          else tapMode(true);
+        };
+        stall = setTimeout(check, 3000);
       },
       pause: () => {
         a.pending = a.wantPlay = false;
+        clearTimeout(stall);
+        tapMode(false);
         if (ready) p.pauseVideo();
       },
-      seek: (t) => ready && p.seekTo(t, true),
+      seek: (t) => ready && a.cued && p.seekTo(t, true),
       volume: (v) => {
         a.vol = v;
         if (ready) p.setVolume(Math.round(v * 100));
@@ -1167,6 +1175,7 @@ const Match = (() => {
       destroy: () => {
         dead = true;
         clearInterval(poll);
+        clearTimeout(stall);
         if (dock.cur === a) {
           dock.cur = null;
           try {
@@ -1178,37 +1187,39 @@ const Match = (() => {
       },
       onState: (st) => {
         if (dead) return;
+        if (st === 5 && !a.cued) {
+          a.cued = true;
+          $("#mqYt")?.classList.add("ready");
+          if (a.wantPlay) a.play();
+        }
         if (st === 1) {
-          a.loaded = true;
+          a.cued = true;
+          clearTimeout(stall);
+          tapMode(false);
           try {
             p.unloadModule("captions"); // الترجمة التلقائية قد تكشف الإجابة
           } catch {}
           $("#mqYt")?.classList.add("ready");
-          if (!warming && a.soundOnPlay) {
+          if (a.soundOnPlay) {
             a.soundOnPlay = false;
             p.unMute();
             p.setVolume(Math.round(a.vol * 100));
           }
         }
-        if (!warming && (st === 1 || st === 0)) a.pending = false;
-        if (warming && st === 1) {
-          // صار عنده مخزون كافٍ: نوقف ونرجع للبداية بصمت
-          warming = false;
-          p.pauseVideo();
-          p.seekTo(a.start, true);
-          p.setVolume(Math.round(a.vol * 100)); // يبقى صامتاً حتى يضغطوا تشغيل
-        }
+        if (st === 1 || st === 0) a.pending = false;
         paintMedia();
       },
       onError: (code) => {
         if (dead) return;
         a.pending = false;
+        clearTimeout(stall);
+        tapMode(false);
         mediaError(ytError(code), id, a.start);
       },
     };
     const tick = () => {
       // نهاية المقطع المسموح (مثلاً 12 ثانية من الشارة)
-      if (ready && !warming && a.limit && p.getPlayerState() === 1 && p.getCurrentTime() >= a.limit) p.pauseVideo();
+      if (ready && a.cued && a.limit && p.getPlayerState() === 1 && p.getCurrentTime() >= a.limit) p.pauseVideo();
       paintMedia();
     };
     ensureDock()
@@ -1217,25 +1228,19 @@ const Match = (() => {
         p = player;
         if (dock.cur && dock.cur !== a) dock.cur.destroy();
         dock.cur = a;
-        // نسخة من أغطية السؤال (بطاقة الصوت/شاشة الإيقاف/الدرع) فوق المشغّل
+        // نسخة من أغطية السؤال (بطاقة الصوت/شاشة الإيقاف/الدرع/تلميح اللمس) فوق المشغّل
         const over = $(".ytd-over", dock.el);
-        over.innerHTML = $$("#mqYt > .mq-yt-shield, #mqYt > .mq-yt-cover, #mqYt > .mq-yt-pause, #mqYt > .mq-yt-msg")
+        over.innerHTML = $$("#mqYt > .mq-yt-shield, #mqYt > .mq-yt-cover, #mqYt > .mq-yt-pause, #mqYt > .mq-yt-msg, #mqYt > .mq-yt-tap")
           .map((x) => x.outerHTML.replace(/\sid="[^"]*"/g, ""))
           .join("");
         dock.sig = "";
         if (!dock.raf) dockSync();
         ready = true;
         poll = setInterval(tick, 200);
+        p.mute();
         p.setVolume(Math.round(a.vol * 100));
-        if (a.wantPlay) {
-          p.mute();
-          a.soundOnPlay = !spec.mute;
-          p.loadVideoById({ videoId: id, startSeconds: a.start });
-        } else {
-          warming = true;
-          p.mute();
-          p.loadVideoById({ videoId: id, startSeconds: a.start });
-        }
+        // cue يحمّل المقطع بدون تشغيل تلقائي (Brave يمنع التشغيل التلقائي حتى الصامت أحياناً)
+        p.cueVideoById({ videoId: id, startSeconds: a.start });
         paintMedia();
       })
       .catch(() => mediaError(L("تعذّر الاتصال بـ YouTube. تأكد من الإنترنت.", "Couldn't reach YouTube. Check the connection."), id, a.start));
