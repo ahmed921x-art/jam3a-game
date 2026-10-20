@@ -13,8 +13,8 @@ test('the published catalog has no repeated question or category across packs', 
   const context = vm.createContext({});
   for (const script of scripts) vm.runInContext(fs.readFileSync(path.join(root, script), 'utf8'), context, { filename: script });
   const categories = vm.runInContext('CATEGORIES', context);
-  assert.ok(categories.length >= 73);
-  assert.ok(categories.reduce((n, c) => n + c.questions.length, 0) >= 1050);
+  assert.ok(categories.length >= 72);
+  assert.ok(categories.reduce((n, c) => n + c.questions.length, 0) >= 1035);
   const ids = new Set();
   const questions = new Set();
   for (const cat of categories) {

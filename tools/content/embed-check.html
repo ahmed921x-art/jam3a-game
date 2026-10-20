@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>فحص تشغيل مقاطع YouTube</title>
+<style>
+  body { font: 16px/1.6 system-ui, sans-serif; margin: 24px; background: #111; color: #eee; }
+  table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+  td, th { border-bottom: 1px solid #333; padding: 6px 8px; text-align: start; }
+  .bad { color: #ff8a8a; font-weight: 700; } .ok { color: #9fe0a0; }
+  #stage { position: fixed; left: -9999px; top: 0; }
+  button { font: inherit; padding: 8px 16px; }
+</style>
+</head>
+<body>
+<!-- فحص حقيقي: يشغّل كل مقطع بمشغّل YouTube المضمَّن (نفس إعدادات اللعبة).
+     oEmbed يقبل مقاطع ممنوعة من التضمين، أما هذا فيكشف الخطأ 101/150 فعلاً.
+     الاستخدام: من جذر المستودع  python -m http.server 8765  ثم افتح
+     http://localhost:8765/tools/content/embed-check.html -->
+<h1>فحص تشغيل مقاطع YouTube داخل اللعبة</h1>
+<p id="sum">جاري تحميل الأسئلة…</p>
+<button id="go" disabled>ابدأ الفحص</button>
+<table><thead><tr><th>المعرّف</th><th>الفئة</th><th>الإجابة</th><th>النتيجة</th></tr></thead><tbody id="rows"></tbody></table>
+<div id="stage"></div>
+<script>var CATEGORIES = [];</script>
+<script src="../../questions.js"></script>
+<script src="../../questions-extra.js"></script>
+<script src="../../questions-kuwait.js"></script>
+<script src="../../questions-pack2.js"></script>
+<script src="../../questions-bio.js"></script>
+<script src="../../gaming-pack.js"></script>
+<script src="../../video-pack.js"></script>
+<script src="../../expansion-pack.js"></script>
+<script>
+  const items = [];
+  const seen = new Set();
+  CATEGORIES.forEach((c) => c.questions.forEach((q) => {
+    if (q.yt && !seen.has(q.yt)) { seen.add(q.yt); items.push({ id: q.yt, cat: c.name, a: q.a }); }
+  }));
+  const rows = document.getElementById("rows");
+  const sum = document.getElementById("sum");
+  const go = document.getElementById("go");
+  const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  rows.innerHTML = items.map((x, i) => `<tr><td><a href="https://www.youtube.com/watch?v=${x.id}" target="_blank" rel="noopener">${x.id}</a></td><td>${esc(x.cat)}</td><td>${esc(x.a)}</td><td id="r${i}">—</td></tr>`).join("");
+  sum.textContent = `${items.length} مقطعاً. الفحص يحتاج إنترنت ويستغرق دقيقتين تقريباً.`;
+  window.onYouTubeIframeAPIReady = () => (go.disabled = false);
+  const s = document.createElement("script");
+  s.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(s);
+
+  function test(x, i) {
+    return new Promise((resolve) => {
+      const cell = document.getElementById("r" + i);
+      const holder = document.createElement("div");
+      document.getElementById("stage").appendChild(holder);
+      let done = false, p;
+      const finish = (ok, msg) => {
+        if (done) return;
+        done = true;
+        cell.textContent = msg;
+        cell.className = ok ? "ok" : "bad";
+        try { p.destroy(); } catch {}
+        resolve(ok);
+      };
+      p = new YT.Player(holder, {
+        host: "https://www.youtube-nocookie.com", videoId: x.id, width: 320, height: 180,
+        playerVars: { playsinline: 1, origin: location.origin },
+        events: {
+          onReady: () => { p.mute(); p.playVideo(); },
+          onStateChange: (e) => e.data === 1 && finish(true, "✔ يعمل"),
+          onError: (e) => finish(false, e.data === 101 || e.data === 150 ? `✘ ممنوع التضمين (${e.data})` : e.data === 100 ? "✘ محذوف/خاص (100)" : `✘ خطأ ${e.data}`),
+        },
+      });
+      setTimeout(() => finish(false, "✘ لم يبدأ خلال 15 ثانية"), 15000);
+    });
+  }
+  go.onclick = async () => {
+    go.disabled = true;
+    let bad = 0;
+    for (let i = 0; i < items.length; i += 8) {
+      const res = await Promise.all(items.slice(i, i + 8).map((x, k) => test(x, i + k)));
+      bad += res.filter((ok) => !ok).length;
+      sum.textContent = `فُحص ${Math.min(i + 8, items.length)} من ${items.length} — مشاكل: ${bad}`;
+    }
+    sum.textContent = bad ? `✘ ${bad} مقطعاً لا يعمل داخل اللعبة (انظر الأحمر).` : "✔ كل المقاطع تعمل داخل اللعبة.";
+  };
+</script>
+</body>
+</html>

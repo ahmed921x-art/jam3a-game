@@ -2,7 +2,8 @@
 /* يفحص حزمة الألعاب (gaming-pack.js) قبل النشر:
    - كل فئة فيها سؤالان مختلفان على الأقل لكل قيمة (200/400/600)، وعدد الأسئلة لكل قيمة
    - إجابات مكررة داخل نفس الفئة
-   - كل مقطع YouTube يسمح بالتضمين (oEmbed)
+   - كل مقطع YouTube موجود وعام (oEmbed). هذا لا يكشف منع التشغيل خارج YouTube (خطأ 150)؛
+     للفحص الحقيقي افتح tools/content/embed-check.html على خادم محلي.
    - كل صورة https تُحمَّل (HTTP 200 ونوعها صورة)
    الاستخدام:  node tools/content/check-pack.js  [--offline]   (offline = بدون فحص الروابط) */
 const fs = require("fs");

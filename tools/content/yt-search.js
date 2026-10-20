@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /* بحث في YouTube + فحص السماح بالتضمين.
    الاستخدام:  node tools/content/yt-search.js "شارة كابتن ماجد" [عدد=5]
-   المخرجات:  المعرّف | العنوان | المدة | القناة | embed-ok أو NO-EMBED
+   المخرجات:  المعرّف | العنوان | المدة | القناة | oembed-ok أو NO-EMBED
+   تنبيه: oembed-ok لا يضمن التشغيل داخل اللعبة (مقاطع FIFA مثلاً تُرفض بخطأ 150).
+   افحص التشغيل الفعلي بـ tools/content/embed-check.html قبل الإضافة.
    استخدم المعرّف في gaming-pack.js كـ yt: "..." */
 const q = process.argv[2];
 const n = +(process.argv[3] || 5);
@@ -35,5 +37,5 @@ async function embeddable(id) {
     }
     for (const k in o) walk(o[k]);
   })(JSON.parse(m[1]));
-  for (const v of out) console.log([v.id, v.title, v.len, v.ch, (await embeddable(v.id)) ? "embed-ok" : "NO-EMBED"].join(" | "));
+  for (const v of out) console.log([v.id, v.title, v.len, v.ch, (await embeddable(v.id)) ? "oembed-ok" : "NO-EMBED"].join(" | "));
 })();
