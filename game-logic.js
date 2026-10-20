@@ -87,6 +87,27 @@ const BioRules = (() => {
     });
   }
 
+  function applyMatchRecord(stats, history, record) {
+    const id = text(record.id).slice(0, 100);
+    const nextStats = { ...(stats && typeof stats === "object" ? stats : {}) };
+    const recorded = Array.isArray(nextStats.bioMatchIds) ? nextStats.bioMatchIds.filter((x) => typeof x === "string") : [];
+    const statsChanged = !id || !recorded.includes(id);
+    if (statsChanged) {
+      nextStats.games = Math.max(0, finite(nextStats.games)) + 1;
+      nextStats.best = Math.max(0, finite(nextStats.best), finite(record.s1), finite(record.s2));
+      nextStats.q = Math.max(0, finite(nextStats.q)) + Math.max(0, finite(record.questions));
+      if (id) nextStats.bioMatchIds = [...recorded, id].slice(-100);
+    }
+    const nextHistory = Array.isArray(history) ? history.slice() : [];
+    const historyChanged = !id || !nextHistory.some((item) => item?.id === id);
+    if (historyChanged) nextHistory.unshift({
+      id, date: finite(record.date),
+      t1: text(record.t1), s1: finite(record.s1), t2: text(record.t2), s2: finite(record.s2),
+      winner: record.s1 === record.s2 ? 0 : record.s1 > record.s2 ? 1 : 2,
+    });
+    return { stats: nextStats, history: nextHistory.slice(0, 20), statsChanged, historyChanged };
+  }
+
   function validateSnapshot(s) {
     if (!s || !Array.isArray(s.teams) || s.teams.length !== 2 || ![1, 2].includes(s.turn) || !Array.isArray(s.cats) || s.cats.length < 1) return false;
     if (s.teams.some((t) => !t || !text(t.name) || !Number.isFinite(t.score) || !Array.isArray(t.lifelines))) return false;
@@ -97,7 +118,7 @@ const BioRules = (() => {
     return true;
   }
 
-  return { TIERS, key, validQuestion, validCategory, cleanCategory, pickBoard, replacement, award, clampWager, applyGolden, advanceTimer, validateSnapshot };
+  return { TIERS, key, validQuestion, validCategory, cleanCategory, pickBoard, replacement, award, clampWager, applyGolden, applyMatchRecord, advanceTimer, validateSnapshot };
 })();
 if (typeof globalThis !== "undefined") globalThis.BioRules = BioRules;
 if (typeof module !== "undefined") module.exports = BioRules;

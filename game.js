@@ -1437,12 +1437,9 @@ const Game = (() => {
 
   // نتيجة مباراة «سين وجيم» (match.js) → نفس الإحصائيات والسجل والإنجازات
   function recordMatch(r) {
-    const st = getStats();
-    st.games = (st.games || 0) + 1;
-    st.best = Math.max(st.best || 0, r.s1, r.s2);
-    st.q = (st.q || 0) + (Number.isFinite(r.questions) ? r.questions : 0);
-    saveStats(st);
-    addHistory({ date: Date.now(), t1: r.t1, s1: r.s1, t2: r.t2, s2: r.s2, winner: r.s1 === r.s2 ? 0 : r.s1 > r.s2 ? 1 : 2 });
+    const result = BioRules.applyMatchRecord(getStats(), getHistory(), { ...r, date: Date.now() });
+    if (result.statsChanged) saveStats(result.stats);
+    if (result.historyChanged) uWrite("history", result.history);
     const fresh = checkAchievements();
     if (fresh.length) setTimeout(() => toast(loc("🏅 إنجاز جديد: ", "🏅 New achievement: ") + achName(fresh[0])), 1400);
   }

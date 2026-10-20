@@ -60,13 +60,14 @@ const Match = (() => {
   }
   function save() {
     try {
-      if (!m || m.phase === "done") {
+      if (!m) {
         localStorage.removeItem(storeKey());
         localStorage.removeItem(timerKey());
       }
       else {
         localStorage.setItem(storeKey(), JSON.stringify({ m, undoStack: undoStack.slice(-10) }));
-        saveTimer();
+        if (m.phase === "done") localStorage.removeItem(timerKey());
+        else saveTimer();
       }
     } catch {}
   }
@@ -159,7 +160,7 @@ const Match = (() => {
           <p class="page-sub">${esc(L("لوحة فئات ونقاط على طريقة سين وجيم: كل فريق يختار خانة بدوره.", "A category-and-points board: teams take turns picking a square."))}</p>
         </div>
       </div>
-      ${saved ? `<div class="resume-box" style="display:flex"><div class="rb-text"><span class="rb-ic" aria-hidden="true">⏸</span><span>${esc(L(`عندك مباراة لم تكتمل: ${saved.m.sides[0].name} ضد ${saved.m.sides[1].name}`, `Unfinished match: ${saved.m.sides[0].name} vs ${saved.m.sides[1].name}`))}</span></div><div class="rb-actions"><button class="btn btn-gold btn-sm" type="button" data-act="resume">${esc(L("أكمل المباراة", "Resume"))}</button><button class="btn btn-ghost btn-sm" type="button" data-act="discard">${esc(L("احذفها", "Discard"))}</button></div></div>` : ""}
+          ${saved ? `<div class="resume-box" style="display:flex"><div class="rb-text"><span class="rb-ic" aria-hidden="true">${saved.m.phase === "done" ? "🏆" : "⏸"}</span><span>${esc(saved.m.phase === "done" ? L(`نتيجة المباراة الأخيرة: ${saved.m.sides[0].name} ضد ${saved.m.sides[1].name}`, `Last match result: ${saved.m.sides[0].name} vs ${saved.m.sides[1].name}`) : L(`عندك مباراة لم تكتمل: ${saved.m.sides[0].name} ضد ${saved.m.sides[1].name}`, `Unfinished match: ${saved.m.sides[0].name} vs ${saved.m.sides[1].name}`))}</span></div><div class="rb-actions"><button class="btn btn-gold btn-sm" type="button" data-act="resume">${esc(saved.m.phase === "done" ? L("اعرض النتيجة", "View result") : L("أكمل المباراة", "Resume"))}</button><button class="btn btn-ghost btn-sm" type="button" data-act="discard">${esc(L("احذفها", "Discard"))}</button></div></div>` : ""}
 
       <section class="card setup-card">
         <h2><span class="sc-n">1</span><span>${esc(L("نوع المباراة", "Match type"))}</span></h2>
@@ -422,6 +423,7 @@ const Match = (() => {
     }));
     const first = cfg.first === "random" ? (Math.random() < 0.5 ? 0 : 1) : +cfg.first;
     m = R.newMatch({ mode: cfg.mode, sides, board, first, rules: { timer: cfg.timer, stealTimer: cfg.stealTimer, steal: cfg.steal, penalty: cfg.penalty, clip: cfg.clip } });
+    m.id = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `bio-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     undoStack = [];
     savePrefs();
     save();
@@ -434,6 +436,7 @@ const Match = (() => {
     const saved = loadSaved();
     if (!saved) return toast(L("المباراة المحفوظة غير صالحة", "Saved match is invalid"));
     m = saved.m;
+    if (!m.id) m.id = `bio-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     undoStack = Array.isArray(saved.undoStack) ? saved.undoStack.filter(R.validate) : [];
     showBoard();
     if (m.phase === "question") openQuestionUI(true, saved.timer);
@@ -1211,8 +1214,8 @@ const Match = (() => {
     const w = R.winner(m);
     const [a, b] = m.sides;
     if (!m.recorded) {
+      Game.recordMatch({ id: m.id, t1: a.name, s1: a.score, t2: b.name, s2: b.score, questions: R.total(m) - R.remaining(m) });
       m.recorded = true;
-      Game.recordMatch({ t1: a.name, s1: a.score, t2: b.name, s2: b.score, questions: R.total(m) - R.remaining(m) });
     }
     save();
     const el = $("#matchResultScreen");

@@ -54,3 +54,17 @@ test('custom category import rejects malformed, duplicate, and executable data',
   assert.equal(clean.icon, '<img>'); // Escaped at every HTML rendering boundary.
   assert.equal(rules.cleanCategory({ name: 'dup', questions: [200, 400, 600].flatMap((p) => [{ points: p, q: 'same', a: 'a' }, { points: p, q: 'same', a: 'b' }]) }), null);
 });
+
+test('match result recording is idempotent and repairs a missing history entry', () => {
+  const record = { id: 'match-1', date: 1000, t1: 'A', s1: 400, t2: 'B', s2: 200, questions: 6 };
+  const first = rules.applyMatchRecord({ games: 2, best: 300, q: 12 }, [], record);
+  assert.deepEqual([first.stats.games, first.stats.best, first.stats.q, first.history.length], [3, 400, 18, 1]);
+  const repeat = rules.applyMatchRecord(first.stats, first.history, record);
+  assert.equal(repeat.statsChanged, false);
+  assert.equal(repeat.historyChanged, false);
+  assert.deepEqual(repeat.stats, first.stats);
+  const repaired = rules.applyMatchRecord(first.stats, [], record);
+  assert.equal(repaired.statsChanged, false);
+  assert.equal(repaired.historyChanged, true);
+  assert.equal(repaired.history[0].id, 'match-1');
+});
