@@ -785,6 +785,53 @@ body[data-mode="light"] .hstat .hs-num { color: var(--text); }
 .help-box > .btn {
   margin-top: 6px;
 }
+.hk-sub {
+  margin: 10px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-3);
+}
+.help-keys .hk-sub:first-of-type {
+  margin-top: 4px;
+}
+.help-classic summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+.help-classic summary::-webkit-details-marker {
+  display: none;
+}
+.help-classic summary::after {
+  content: "▾";
+  margin-inline-start: auto;
+  color: var(--text-3);
+  transition: transform 0.2s;
+}
+.help-classic[open] summary::after {
+  transform: rotate(180deg);
+}
+.help-classic summary h3 {
+  margin: 0;
+}
+.help-classic > p {
+  margin-bottom: 6px;
+}
+/* بيانات الضيف: تنبيه واضح أن الحفظ على هذا الجهاز فقط */
+.guest-local {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px dashed var(--line-2);
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: start;
+}
 
 /* ---------- المحرر ---------- */
 .editor-box {

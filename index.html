@@ -107,7 +107,7 @@
             </div>
           </div>
           <div class="hero-copy">
-            <p class="eyebrow" data-i18n="eyebrow">مسابقة جماعية • فريقان • شاشة واحدة</p>
+            <p class="eyebrow" data-i18n="eyebrow">فريق ضد فريق أو 1 ضد 1 • شاشة واحدة</p>
             <h1 class="hero-title" id="heroTitle"><span class="ht-ar">بايو</span><span class="ht-en" lang="en">BIO</span></h1>
             <p class="hero-tagline" data-i18n="tagline">من الخلية إلى المجرّة: أسئلة في الأحياء والعلوم والمعلومات العامة، وفريقكم يجمع النقاط.</p>
             <div class="hero-cta">
@@ -130,17 +130,17 @@
         <!-- طريقة اللعب باختصار -->
         <h2 class="section-h" id="how" data-i18n="how_title">كيف تمشي اللعبة؟</h2>
         <ol class="steps">
-          <li class="step"><span class="step-n hex hex-cream">1</span><div><h3 data-i18n="step1_t">سمّوا الفريقين</h3><p data-i18n="step1">اكتبوا اسم كل فريق واختاروا لونه.</p></div></li>
-          <li class="step"><span class="step-n hex hex-lime">2</span><div><h3 data-i18n="step2_t">اختاروا الفئات</h3><p data-i18n="step2">من 4 إلى 6 فئات: أحياء، علوم، الكويت، وغيرها.</p></div></li>
-          <li class="step"><span class="step-n hex hex-aqua">3</span><div><h3 data-i18n="step3_t">جاوبوا بالدور</h3><p data-i18n="step3">الفريق صاحب الدور يختار سؤالاً بقيمة 200 أو 400 أو 600.</p></div></li>
+          <li class="step"><span class="step-n hex hex-cream">1</span><div><h3 data-i18n="step1_t">سمّوا الفريقين</h3><p data-i18n="step1">فريق ضد فريق أو واحد ضد واحد: اكتبوا الأسماء واختاروا الألوان.</p></div></li>
+          <li class="step"><span class="step-n hex hex-lime">2</span><div><h3 data-i18n="step2_t">اختاروا الفئات</h3><p data-i18n="step2">من 3 إلى 6 فئات: ألعاب، أنمي، أحياء، الكويت، وغيرها.</p></div></li>
+          <li class="step"><span class="step-n hex hex-aqua">3</span><div><h3 data-i18n="step3_t">جاوبوا بالدور</h3><p data-i18n="step3">الفريق صاحب الدور يختار خانة (سهل، متوسط، صعب)، والإجابة الخاطئة تفتح فرصة سرقة للفريق الآخر.</p></div></li>
           <li class="step"><span class="step-n hex hex-rose">4</span><div><h3 data-i18n="step4_t">اجمعوا النقاط</h3><p data-i18n="step4">المقدّم يحكم، والأعلى نقاطاً في النهاية يفوز.</p></div></li>
         </ol>
 
         <h2 class="section-h" data-i18n="feat_title">ليش بايو؟</h2>
         <div class="features">
           <article class="feature f-lime"><div class="fic hex">🧬</div><h3 data-i18n="f1_t">علوم بنكهة مرحة</h3><p data-i18n="f1_d">فئات للخلية والوراثة والأحياء الدقيقة والبيئة، بجانب فئات عامة وكويتية.</p></article>
-          <article class="feature f-aqua"><div class="fic hex">🛟</div><h3 data-i18n="f2_t">وسائل مساعدة</h3><p data-i18n="f2_d">لكل فريق: تبديل السؤال، واتصال بصديق، وجوابان بدل جواب.</p></article>
-          <article class="feature f-cream"><div class="fic hex">👑</div><h3 data-i18n="f3_t">جولة ذهبية</h3><p data-i18n="f3_d">رهان على سؤال أخير يقلب النتيجة، وشوط فاصل عند التعادل.</p></article>
+          <article class="feature f-aqua"><div class="fic hex">🎧</div><h3 data-i18n="f2_t">أغانٍ وصور ومقاطع</h3><p data-i18n="f2_d">خمّنوا الشارة من مقطع قصير، واللعبة من لقطة، والشخصية من صورتها.</p></article>
+          <article class="feature f-cream"><div class="fic hex">⚡</div><h3 data-i18n="f3_t">سرقة وعدالة</h3><p data-i18n="f3_d">سؤالان لكل قيمة في كل فئة، فكل فريق ياخذ فرصته. والخطأ يفتح باب السرقة.</p></article>
           <article class="feature f-orchid"><div class="fic hex">✏️</div><h3 data-i18n="f4_t">أسئلتك أنت</h3><p data-i18n="f4_d">أنشئ فئاتك الخاصة واحفظها، وصدّرها لتشاركها مع غيرك.</p></article>
         </div>
 
@@ -547,6 +547,7 @@
         <div class="auth-err" id="authErr" role="alert"></div>
         <div class="auth-divider"><span data-i18n="or">أو</span></div>
         <button class="btn btn-ghost btn-block" type="button" onclick="Game.guest()"><span data-i18n="guest_btn">العب كضيف</span></button>
+        <p class="guest-local" id="guestLocalNote" data-i18n="guest_local">🔒 كضيف تُحفظ إحصائياتك وفئاتك الخاصة والمباراة غير المكتملة في هذا المتصفح فقط. مسح بيانات المتصفح أو تغيير الجهاز يفقدها.</p>
       </div>
     </div>
 
@@ -586,44 +587,64 @@
       <div class="modal-box help-box">
         <button class="icon-btn auth-close" type="button" onclick="Game.closeHelp()" aria-label="إغلاق" data-i18n-aria="close"><svg class="ic"><use href="#i-x" /></svg></button>
         <h2 class="help-title" id="helpH" data-i18n="help_h">طريقة لعب بايو</h2>
-        <p class="help-lead" data-i18n="help_lead">لعبة لفريقين ومقدّم واحد يقرأ الأسئلة ويحكم. كل شيء على شاشة واحدة.</p>
+        <p class="help-lead" data-i18n="help_lead">فريقان (أو لاعبان) ومقدّم واحد يقرأ الأسئلة ويحكم. كل شيء على شاشة واحدة. هذه قواعد «سين وجيم»، الوضع الذي يبدأ من الصفحة الرئيسية.</p>
 
         <ol class="help-flow">
-          <li><span class="hf-n hex hex-cream">1</span><div><b data-i18n="h1_t">جهّزوا اللعبة</b><p data-i18n="h1_d">اكتبوا أسماء الفريقين، واختاروا من 4 إلى 6 فئات.</p></div></li>
-          <li><span class="hf-n hex hex-lime">2</span><div><b data-i18n="h2_t">اختاروا خانة</b><p data-i18n="h2_d">في كل فئة ستة أسئلة: اثنان بقيمة 200، واثنان 400، واثنان 600. الفريق صاحب الدور يختار.</p></div></li>
-          <li><span class="hf-n hex hex-aqua">3</span><div><b data-i18n="h3_t">جاوبوا ثم احكموا</b><p data-i18n="h3_d">المؤقت يعدّ صعوداً. المقدّم يعرض الإجابة ثم يختار الفريق الذي جاوب صح، أو «ولا أحد». الدور ينتقل بعدها تلقائياً.</p></div></li>
-          <li><span class="hf-n hex hex-rose">4</span><div><b data-i18n="h4_t">الفوز</b><p data-i18n="h4_d">عندما تُفتح كل الخانات تظهر النتيجة. الأعلى نقاطاً يفوز.</p></div></li>
+          <li><span class="hf-n hex hex-cream">1</span><div><b data-i18n="h1_t">جهّزوا اللعبة</b><p data-i18n="h1_d">اختاروا فريق ضد فريق أو واحد ضد واحد، واكتبوا الأسماء، ثم اختاروا 3 أو 4 أو 5 أو 6 فئات.</p></div></li>
+          <li><span class="hf-n hex hex-lime">2</span><div><b data-i18n="h2_t">اختاروا خانة</b><p data-i18n="h2_d">في كل فئة ست خانات: سهلتان ومتوسطتان وصعبتان (مثلاً 200 و400 و600)، حتى يأخذ كل فريق فرصته. الرمز 🎵 أو 🖼️ أو 🎬 في الخانة يعني سؤال صوت أو صورة أو مقطع.</p></div></li>
+          <li><span class="hf-n hex hex-aqua">3</span><div><b data-i18n="h3_t">جاوبوا ثم احكموا</b><p data-i18n="h3_d">المؤقت يعدّ تنازلياً للفريق صاحب الدور. المقدّم يضغط «إجابة صحيحة» أو «إجابة خاطئة» أو «ولا أحد»، ثم يرجع للوحة. الدور ينتقل بعدها للفريق الآخر.</p></div></li>
+          <li><span class="hf-n hex hex-rose">4</span><div><b data-i18n="h4_t">الفوز</b><p data-i18n="h4_d">عندما تُلعب كل الخانات (أو يضغط المقدّم «إنهاء») تظهر النتيجة. الأعلى نقاطاً يفوز.</p></div></li>
         </ol>
-
-        <div class="help-section">
-          <h3 data-i18n="hl_t">🛟 وسائل المساعدة: مرة واحدة لكل فريق</h3>
-          <ul>
-            <li><b>🔄 <span data-i18n="ll_swap">تبديل السؤال</span>:</b> <span data-i18n="hl_swap">سؤال آخر من نفس الفئة وبنفس النقاط.</span></li>
-            <li><b>📞 <span data-i18n="ll_phone">اتصال بصديق</span>:</b> <span data-i18n="hl_phone">دقيقة واحدة للاتصال بشخص، ومؤقت السؤال يتوقف خلالها.</span></li>
-            <li><b>✌️ <span data-i18n="ll_two">جوابان</span>:</b> <span data-i18n="hl_two">يحق للفريق إعطاء جوابين، ويُحسب له إذا كان أحدهما صحيحاً.</span></li>
-          </ul>
-          <p class="help-note" data-i18n="hl_note">تُستخدم الوسيلة من شاشة السؤال بالضغط على أيقونتها.</p>
-        </div>
 
         <div class="help-grid">
           <div class="help-section">
-            <h3 data-i18n="hg_t">👑 الجولة الذهبية</h3>
-            <p data-i18n="hg_d">اختيارية من الإعدادات. قبل النتيجة يراهن كل فريق بجزء من نقاطه على سؤال أخير: الصحيح يضيف الرهان والخطأ يخصمه.</p>
+            <h3 data-i18n="hs_t">⚡ السرقة والخصم</h3>
+            <p data-i18n="hs_d">إذا أخطأ الفريق صاحب الدور يحق للفريق الآخر محاولة السرقة بمؤقت أقصر، بشرط ألا تكون الإجابة قد كُشفت. الخصم على الخطأ اختياري من قواعد المباراة.</p>
           </div>
           <div class="help-section">
-            <h3 data-i18n="ht_t">⚡ الشوط الفاصل</h3>
-            <p data-i18n="ht_d">عند التعادل يظهر سؤال حاسم، وأول فريق يجاوب صح يفوز.</p>
+            <h3 data-i18n="hm_t">🎧 الأغاني والمقاطع</h3>
+            <p data-i18n="hm_d">المقطع قصير ويبدأ من مكان عشوائي لا يُذكر فيه اسم العمل. للمقدّم: ➕ يزيد 5 ثوانٍ، و📌 يثبّت بداية المقطع على هذا الجهاز. يحتاج إنترنت لأن المقاطع من YouTube.</p>
           </div>
         </div>
 
         <div class="help-section help-keys">
           <h3 data-i18n="hk_t">⌨️ اختصارات لوحة المفاتيح</h3>
+          <h4 class="hk-sub" data-i18n="hk_match">في «سين وجيم»</h4>
+          <ul>
+            <li><kbd>Space</kbd> <span data-i18n="hk_space">عرض الإجابة</span></li>
+            <li><kbd>1</kbd> <span data-i18n="hk_m1">إجابة صحيحة</span></li>
+            <li><kbd>2</kbd> <span data-i18n="hk_m2">إجابة خاطئة (تفتح السرقة إذا كانت مفعّلة)</span></li>
+            <li><kbd>0</kbd> <span data-i18n="hk_0">ولا أحد</span></li>
+            <li><kbd>Enter</kbd> <span data-i18n="hk_enter">الرجوع للوحة بعد الحكم</span></li>
+          </ul>
+          <h4 class="hk-sub" data-i18n="hk_classic">في الوضع الكلاسيكي</h4>
           <ul>
             <li><kbd>Space</kbd> <span data-i18n="hk_space">عرض الإجابة</span></li>
             <li><kbd>1</kbd> / <kbd>2</kbd> <span data-i18n="hk_12">نقاط للفريق الأول / الثاني (بعد عرض الإجابة)</span></li>
             <li><kbd>0</kbd> <span data-i18n="hk_0">ولا أحد</span></li>
             <li><kbd>Esc</kbd> <span data-i18n="hk_esc">إغلاق النافذة أو الرجوع للوحة</span></li>
           </ul>
+        </div>
+
+        <details class="help-section help-classic">
+          <summary><h3 data-i18n="hc_t">🛟 الوضع الكلاسيكي</h3></summary>
+          <p data-i18n="hc_d">من شاشة الإعداد: «أو العب الوضع الكلاسيكي». لوحة 200/400/600 من 4 إلى 6 فئات، مع وسائل مساعدة وجولة ذهبية، والمؤقت يعدّ صعوداً.</p>
+          <h4 class="hk-sub" data-i18n="hl_t">🛟 وسائل المساعدة: مرة واحدة لكل فريق</h4>
+          <ul>
+            <li><b>🔄 <span data-i18n="ll_swap">تبديل السؤال</span>:</b> <span data-i18n="hl_swap">سؤال آخر من نفس الفئة وبنفس النقاط.</span></li>
+            <li><b>📞 <span data-i18n="ll_phone">اتصال بصديق</span>:</b> <span data-i18n="hl_phone">دقيقة واحدة للاتصال بشخص، ومؤقت السؤال يتوقف خلالها.</span></li>
+            <li><b>✌️ <span data-i18n="ll_two">جوابان</span>:</b> <span data-i18n="hl_two">يحق للفريق إعطاء جوابين، ويُحسب له إذا كان أحدهما صحيحاً.</span></li>
+          </ul>
+          <p class="help-note" data-i18n="hl_note">تُستخدم الوسيلة من شاشة السؤال بالضغط على أيقونتها.</p>
+          <h4 class="hk-sub" data-i18n="hg_t">👑 الجولة الذهبية</h4>
+          <p data-i18n="hg_d">اختيارية من الإعدادات. قبل النتيجة يراهن كل فريق بجزء من نقاطه على سؤال أخير: الصحيح يضيف الرهان والخطأ يخصمه.</p>
+          <h4 class="hk-sub" data-i18n="ht_t">⚡ الشوط الفاصل</h4>
+          <p data-i18n="ht_d">عند التعادل يظهر سؤال حاسم، وأول فريق يجاوب صح يفوز.</p>
+        </details>
+
+        <div class="help-section help-data">
+          <h3 data-i18n="hd_t">💾 أين تُحفظ بياناتي؟</h3>
+          <p data-i18n="hd_d">كضيف: كل شيء (الإحصائيات، السجل، الفئات الخاصة، المباراة غير المكتملة) يُحفظ في هذا المتصفح على هذا الجهاز فقط، ويُحذف إذا مسحت بيانات المتصفح. بعد الدخول بحساب Google تُزامَن الإحصائيات والسجل والإنجازات والفئات الخاصة، أما المباراة الجارية وإعداداتها فتبقى على الجهاز.</p>
         </div>
 
         <button class="btn btn-gold btn-block btn-lg" type="button" onclick="Game.closeHelp()"><span data-i18n="help_ok">فهمت، يلا نلعب</span></button>
