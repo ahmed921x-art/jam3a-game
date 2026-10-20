@@ -37,9 +37,20 @@ const Catalog = (() => {
         const aImg = safeUrl(q.aImg);
         if (img) x.img = img;
         if (aImg) x.aImg = aImg;
+        // حقول الوسائط من فئة أساسية معدّلة؛ match-logic.cleanQuestion يعيد فحصها قبل اللعب
+        if (["text", "image", "audio", "video"].includes(q.type)) x.type = q.type;
+        if (typeof q.yt === "string" && /^[\w-]{11}$/.test(q.yt)) x.yt = q.yt;
+        ["start", "end", "blur", "zoom"].forEach((k) => Number.isFinite(q[k]) && (x[k] = q[k]));
+        if (Array.isArray(q.win)) x.win = q.win.filter((w) => Array.isArray(w) && w.length === 2 && w.every(Number.isFinite)).slice(0, 20);
+        if (q.mute === true) x.mute = true;
+        if (txt(q.focus, 12)) x.focus = txt(q.focus, 12);
+        if (txt(q.hint, 200)) x.hint = txt(q.hint, 200);
+        ["audio", "video"].forEach((k) => safeUrl(q[k]) && (x[k] = safeUrl(q[k])));
         return x;
       });
-    const ok = TIERS.every((p) => new Set(questions.filter((q) => q.points === p).map((q) => q.q)).size >= 2);
+    // سؤالان مختلفان لكل قيمة (النص + الوسيط: أسئلة الوسائط قد تتشارك النص)
+    const key = (q) => q.q + "|" + (q.img || q.yt || q.audio || q.video || "");
+    const ok = TIERS.every((p) => new Set(questions.filter((q) => q.points === p).map(key)).size >= 2);
     if (!ok) return null;
     const cat = { id: String(id), name, icon: txt(d.icon, 16) || "📁", group: GROUPS.includes(d.group) ? d.group : "general", questions, admin: true };
     const img = safeUrl(d.img);
@@ -53,13 +64,17 @@ const Catalog = (() => {
     lastSig = sig;
     const hidden = new Set(Array.isArray(data.hidden) ? data.hidden : []);
     const images = data.images && typeof data.images === "object" ? data.images : {};
+    const docs = (Array.isArray(data.cats) ? data.cats : []).map((c) => cleanCat(c, c && c.id)).filter(Boolean);
+    // فئة أساسية عدّلها المشرف: تحل محل الأصل بنفس المكان والمجموعة
+    const edited = new Map(docs.filter((c) => BASE_IDS.has(c.id)).map((c) => [c.id, c]));
     const base = BASE.filter((c) => !hidden.has(c.id)).map((c) => {
-      const img = safeUrl(images[c.id]);
-      return img ? { ...c, img } : c;
+      const e = edited.get(c.id);
+      const img = (e && e.img) || safeUrl(images[c.id]) || c.img;
+      const out = e ? { ...c, name: e.name, icon: e.icon || c.icon, questions: e.questions, admin: true } : { ...c };
+      if (img) out.img = img;
+      return out;
     });
-    const extra = (Array.isArray(data.cats) ? data.cats : [])
-      .map((c) => cleanCat(c, c && c.id))
-      .filter((c) => c && !BASE_IDS.has(c.id) && !hidden.has(c.id));
+    const extra = docs.filter((c) => !BASE_IDS.has(c.id) && !hidden.has(c.id));
     // كل فئة إضافية تظهر في آخر مجموعتها
     const rank = { bio: 0, kuwait: 1, general: 2 };
     const all = [...base, ...extra].map((c, i) => [c, i]);

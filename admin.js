@@ -10,7 +10,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const TIERS = [200, 400, 600];
-  const GROUP_LABEL = { bio: "🧬 أحياء وعلوم", kuwait: "🇰🇼 الكويت", general: "🎯 عامة" };
+  const GROUP_LABEL = { bio: "🧬 أحياء وعلوم", kuwait: "🇰🇼 الكويت", general: "🎯 عامة", gaming: "🎮 ألعاب فيديو", anime: "🎌 أنمي", cartoon: "📺 كرتون زمان", sport: "⚽ رياضة", music: "🎤 موسيقى" };
   const db = FB.db;
   const auth = FB.auth;
   const BUILTIN = CATEGORIES.slice(); // من ملفات الأسئلة
@@ -20,6 +20,19 @@
   let adminsDoc = null;
   let cats = []; // الفئات المضافة [{ id, ...data }]
   let editingId = null;
+  // فئة أساسية مفتوحة للتعديل: تُحفظ في categories/{نفس المعرّف} واللعبة تستبدل بها الأصل
+  const isBuiltin = (id) => !!id && BUILTIN_IDS.has(id);
+  const builtinById = (id) => BUILTIN.find((c) => c.id === id);
+  // حقول الوسائط (صوت/فيديو/تكبير الصورة) لا يعرضها النموذج، لكنها تُحفظ كما هي مع السؤال
+  const EXTRA_KEYS = ["type", "yt", "win", "start", "end", "mute", "blur", "zoom", "focus", "hint", "audio", "video"];
+  const extrasOf = (q) => {
+    const x = {};
+    EXTRA_KEYS.forEach((k) => q && q[k] !== undefined && (x[k] = q[k]));
+    return x;
+  };
+  const MEDIA_ICON = { image: "🖼", audio: "🎵", video: "🎬" };
+  // هوية السؤال = نصه + وسيطه (أسئلة الوسائط تتشارك النص مثل «من أي لعبة هذي الموسيقى؟»)
+  const qKey = (x) => norm(x.q) + "|" + (x.img || x.yt || x.audio || x.video || "");
   let dirty = false;
   let overrides = { hidden: [], images: {} };
 
@@ -254,6 +267,7 @@
     const snap = await db.collection("categories").get();
     cats = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.name).localeCompare(String(b.name), "ar"));
     renderCatList();
+    if ($("#builtinList").children.length) renderBuiltin();
   }
 
   function renderCatList() {
@@ -267,7 +281,8 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "adm-item" + (c.id === editingId ? " on" : "");
-      b.innerHTML = `<span class="ai-ic">${esc(c.icon || "📁")}</span><span class="ai-nm">${esc(c.name)}</span><span class="ai-meta">${esc(GROUP_LABEL[c.group] || "")} · ${(c.questions || []).length} سؤال</span>`;
+      const meta = isBuiltin(c.id) ? "✏️ فئة أساسية معدّلة" : GROUP_LABEL[c.group] || "";
+      b.innerHTML = `<span class="ai-ic">${esc(c.icon || "📁")}</span><span class="ai-nm">${esc(c.name)}</span><span class="ai-meta">${esc(meta)} · ${(c.questions || []).length} سؤال</span>`;
       b.addEventListener("click", () => {
         if (dirty && !confirm("فيه تعديلات غير محفوظة. تتركها؟")) return;
         loadIntoForm(c);
@@ -276,9 +291,10 @@
     });
   }
 
-  function qRow(points = 200, q = "", a = "", img = "", aImg = "") {
+  function qRow(points = 200, q = "", a = "", img = "", aImg = "", extras = {}) {
     const row = document.createElement("div");
     row.className = "adm-q";
+    if (Object.keys(extras).length) row.dataset.extras = JSON.stringify(extras);
     row.innerHTML = `
       <select aria-label="النقاط">${TIERS.map((p) => `<option value="${p}">${p}</option>`).join("")}</select>
       <input class="q" type="text" maxlength="500" placeholder="السؤال" aria-label="السؤال" />
@@ -290,6 +306,8 @@
         <div class="adm-q-img"><span>صورة الإجابة</span><div class="aqi-row"><input class="ai" type="url" dir="ltr" placeholder="رابط، أو ارفع من جهازك" /><button type="button" class="btn btn-ghost btn-sm adm-up" data-for="ai">📤 رفع</button></div></div>
       </div>`;
     row.querySelector("select").value = String(points);
+    if (MEDIA_ICON[extras.type]) row.querySelector(".q").placeholder = MEDIA_ICON[extras.type] + " السؤال (المقطع/الصورة يبقى كما هو)";
+    if (MEDIA_ICON[extras.type]) row.classList.add("is-media");
     row.querySelector(".q").value = q;
     row.querySelector(".a").value = a;
     setImgField(row.querySelector(".qi"), img);
@@ -332,13 +350,21 @@
   function fillQuestions(questions) {
     const box = $("#qList");
     box.innerHTML = "";
-    questions.forEach((q) => box.appendChild(qRow(q.points, q.q, q.a, q.img, q.aImg)));
+    questions.forEach((q) => box.appendChild(qRow(q.points, q.q, q.a, q.img, q.aImg, extrasOf(q))));
     sortRows();
     updateTiers();
   }
 
+  function setBuiltinMode(base) {
+    $("#builtinNote").hidden = !base;
+    $("#fGroup").disabled = !!base;
+    $("#delCat").textContent = base ? "↩️ استرجاع الأسئلة الأصلية" : "🗑 حذف الفئة";
+  }
+
   function newCategory() {
     editingId = null;
+    setBuiltinMode(null);
+    $$("#fGroup option[data-tmp]").forEach((o) => o.remove());
     $("#edTitle").textContent = "فئة جديدة";
     $("#fName").value = "";
     $("#fIcon").value = "";
@@ -354,12 +380,22 @@
 
   function loadIntoForm(c) {
     editingId = c.id;
-    $("#edTitle").textContent = `تعديل: ${c.name}`;
+    const base = isBuiltin(c.id) ? builtinById(c.id) : null;
+    const saved = cats.some((x) => x.id === c.id);
+    setBuiltinMode(base);
+    $("#edTitle").textContent = base ? `تعديل فئة أساسية: ${c.name}` : `تعديل: ${c.name}`;
     $("#fName").value = c.name || "";
     $("#fIcon").value = c.icon || "";
-    $("#fGroup").value = c.group || "general";
+    const g = base ? base.group : c.group;
+    const sel = $("#fGroup");
+    $$("option[data-tmp]", sel).forEach((o) => o.remove());
+    // مجموعة الفئة الأساسية (ألعاب، أنمي…) تُعرض كما هي؛ لا تتغير من هنا
+    if (base && ![...sel.options].some((o) => o.value === g)) sel.append(Object.assign(document.createElement("option"), { value: g, textContent: GROUP_LABEL[g] || g }));
+    $$("option", sel).forEach((o) => !["bio", "kuwait", "general"].includes(o.value) && o.setAttribute("data-tmp", ""));
+    sel.value = [...sel.options].some((o) => o.value === g) ? g : "general";
     setImgField($("#fImg"), c.img || "");
-    $("#delCat").hidden = false;
+    // الفئة الأساسية لم تُعدَّل بعد: لا شيء يُسترجع
+    $("#delCat").hidden = base ? !saved : false;
     fillQuestions(c.questions || []);
     previewImg();
     $("#formErr").textContent = "";
@@ -370,7 +406,7 @@
   function readForm() {
     const questions = $$("#qList .adm-q")
       .map((r) => {
-        const x = { points: +r.querySelector("select").value, q: norm(r.querySelector(".q").value), a: norm(r.querySelector(".a").value) };
+        const x = { points: +r.querySelector("select").value, q: norm(r.querySelector(".q").value), a: norm(r.querySelector(".a").value), ...(r.dataset.extras ? JSON.parse(r.dataset.extras) : {}) };
         const img = imgFieldValue(r.querySelector(".qi"));
         const aImg = imgFieldValue(r.querySelector(".ai"));
         if (img) x.img = img;
@@ -386,15 +422,15 @@
     const half = d.questions.find((x) => !x.q || !x.a);
     if (half) return "فيه سؤال بدون إجابة أو إجابة بدون سؤال. أكمله أو احذفه.";
     for (const p of TIERS) {
-      const n = new Set(d.questions.filter((x) => x.points === p).map((x) => x.q)).size;
+      const n = new Set(d.questions.filter((x) => x.points === p).map(qKey)).size;
       if (n < 2) return `تحتاج سؤالين مختلفين على الأقل بقيمة ${p} (عندك ${n}).`;
     }
     const seen = new Set();
     for (const x of d.questions) {
-      if (seen.has(x.q)) return `السؤال مكرر: «${x.q}»`;
-      seen.add(x.q);
+      if (seen.has(qKey(x))) return `السؤال مكرر: «${x.q}»`;
+      seen.add(qKey(x));
     }
-    const dupBuiltin = BUILTIN.find((c) => c.questions.some((x) => d.questions.some((y) => y.q === x.q.trim())));
+    const dupBuiltin = BUILTIN.find((c) => c.id !== editingId && c.questions.some((x) => seen.has(qKey(x))));
     if (dupBuiltin) return `أحد الأسئلة موجود أصلاً في فئة «${dupBuiltin.name}». غيّره حتى لا يتكرر في اللعبة.`;
     if (safeUrl(d.img) === null) return "رابط الصورة لازم يبدأ بـ https:// أو assets/";
     const badImg = d.questions.find((x) => safeUrl(x.img) === null || safeUrl(x.aImg) === null);
@@ -470,7 +506,10 @@
     $("#formErr").textContent = err;
     if (err) return;
     const id = editingId || "a_" + Date.now().toString(36);
-    if (BUILTIN_IDS.has(id)) return ($("#formErr").textContent = "معرّف محجوز لفئة أساسية.");
+    if (!editingId && BUILTIN_IDS.has(id)) return ($("#formErr").textContent = "معرّف محجوز لفئة أساسية.");
+    // قواعد Firestore تقبل هذه المجموعات فقط؛ مجموعة الفئة الأساسية (ألعاب، أنمي…) تأخذها اللعبة من الملفات
+    if (!["bio", "kuwait", "general"].includes(d.group)) d.group = "general";
+    if (!d.img) delete d.img;
     const btn = $("#saveCat");
     btn.disabled = true;
     try {
@@ -482,7 +521,7 @@
       dirty = false;
       await loadCats();
       loadIntoForm(cats.find((c) => c.id === id) || { id, ...d });
-      toast("✅ تم الحفظ. الفئة ظاهرة الآن في اللعبة");
+      toast(isBuiltin(id) ? "✅ تم الحفظ. النسخة المعدّلة تحل محل الأصلية في اللعبة" : "✅ تم الحفظ. الفئة ظاهرة الآن في اللعبة");
     } catch (e) {
       $("#formErr").textContent = "تعذّر الحفظ: " + (e.code === "permission-denied" ? "ليس لديك صلاحية، أو قواعد Firestore لم تُنشر بعد." : e.message || e);
     } finally {
@@ -493,12 +532,17 @@
   $("#delCat").addEventListener("click", async () => {
     if (!editingId) return;
     const c = cats.find((x) => x.id === editingId);
-    if (!confirm(`حذف فئة «${c ? c.name : ""}» نهائياً؟ ستختفي من اللعبة عند كل اللاعبين.`)) return;
+    const base = isBuiltin(editingId) ? builtinById(editingId) : null;
+    const msg = base
+      ? `استرجاع الأسئلة الأصلية لفئة «${base.name}»؟ ستُحذف تعديلاتك وترجع الفئة كما في ملفات المشروع.`
+      : `حذف فئة «${c ? c.name : ""}» نهائياً؟ ستختفي من اللعبة عند كل اللاعبين.`;
+    if (!confirm(msg)) return;
     try {
       await db.collection("categories").doc(editingId).delete();
-      toast("🗑 تم حذف الفئة");
+      toast(base ? "↩️ رجعت الفئة لأسئلتها الأصلية" : "🗑 تم حذف الفئة");
       await loadCats();
-      newCategory();
+      if (base) loadIntoForm({ ...base, img: overrides.images[base.id] || base.img || "", questions: base.questions.slice() });
+      else newCategory();
     } catch (e) {
       $("#formErr").textContent = "تعذّر الحذف: " + (e.message || e);
     }
@@ -514,6 +558,7 @@
         const c = Array.isArray(data) ? data[0] : data;
         if (!c || !Array.isArray(c.questions)) throw new Error();
         editingId = null;
+        setBuiltinMode(null);
         $("#delCat").hidden = true;
         $("#edTitle").textContent = "فئة جديدة (مستوردة)";
         $("#fName").value = norm(c.name).slice(0, 60);
@@ -551,7 +596,8 @@
         <span class="ai-ic">${esc(c.icon)}</span>
         <div class="bi-txt"><span class="ai-nm">${esc(c.name)}</span><span class="ai-meta">${esc(GROUP_LABEL[c.group] || "")} · ${c.questions.length} سؤال · <code dir="ltr">${esc(c.id)}</code></span></div>
         <div class="bi-imgwrap"><input class="bi-img" type="url" dir="ltr" placeholder="رابط صورة (اختياري)" aria-label="رابط صورة ${esc(c.name)}" /><button type="button" class="btn btn-ghost btn-sm bi-up" aria-label="رفع صورة ${esc(c.name)}">📤</button></div>
-        <label class="bi-toggle"><input type="checkbox" ${hidden ? "" : "checked"} /> <span>${hidden ? "مخفية" : "ظاهرة"}</span></label>`;
+        <label class="bi-toggle"><input type="checkbox" ${hidden ? "" : "checked"} /> <span>${hidden ? "مخفية" : "ظاهرة"}</span></label>
+        <button type="button" class="btn btn-ghost btn-sm bi-edit">${cats.some((x) => x.id === c.id) ? "✏️ معدّلة · افتح" : "✏️ عدّل الأسئلة"}</button>`;
       const biImg = row.querySelector(".bi-img");
       setImgField(biImg, overrides.images[c.id] || "");
       biImg.addEventListener("input", () => {
@@ -569,6 +615,13 @@
         dirty = true;
         toast("🖼 تم رفع الصورة. اضغط «حفظ التغييرات» لنشرها");
       });
+      row.querySelector(".bi-edit").addEventListener("click", () => {
+        if (dirty && !confirm("فيه تعديلات غير محفوظة. تتركها؟")) return;
+        const saved = cats.find((x) => x.id === c.id);
+        loadIntoForm(saved || { ...c, img: overrides.images[c.id] || c.img || "", questions: c.questions.slice() });
+        $('.adm-tab[data-tab="cats"]').click();
+        $("#fName").focus();
+      });
       row.querySelector(".bi-toggle input").addEventListener("change", (e) => {
         const set = new Set(overrides.hidden);
         e.target.checked ? set.delete(c.id) : set.add(c.id);
@@ -585,7 +638,7 @@
     const bad = Object.entries(overrides.images).find(([, v]) => safeUrl(v) === null);
     if (bad) return toast(`رابط صورة غير صالح في «${bad[0]}» — لازم يبدأ بـ https:// أو assets/`);
     if (JSON.stringify(overrides).length > MAX_DOC) return toast("مجموع صور الفئات الأساسية كبير. استخدم روابط لبعضها بدل الرفع.");
-    const visible = BUILTIN.length - overrides.hidden.length + cats.length;
+    const visible = BUILTIN.length - overrides.hidden.length + cats.filter((c) => !isBuiltin(c.id)).length;
     if (visible < 4) return toast("لازم تبقى 4 فئات ظاهرة على الأقل");
     try {
       await db.collection("catalog").doc("overrides").set({

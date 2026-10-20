@@ -71,6 +71,7 @@
 
             <section class="card adm-editor" aria-labelledby="edTitle">
               <h2 id="edTitle">فئة جديدة</h2>
+              <p class="adm-note" id="builtinNote" hidden>✏️ هذه فئة أساسية من ملفات المشروع. تعديلك يُحفظ كنسخة تحل محلها في اللعبة عند كل اللاعبين، وتقدر ترجعها للأصل بزر «استرجاع الأسئلة الأصلية». أسئلة الصوت والفيديو والصور (🎵 🎬 🖼) يبقى مقطعها كما هو، وتقدر تعدّل نصها وإجابتها.</p>
               <div class="adm-row">
                 <div class="field"><label for="fName">اسم الفئة</label><input id="fName" type="text" maxlength="60" placeholder="مثال: علم المناعة" autocomplete="off" /></div>
                 <div class="field adm-icon"><label for="fIcon">رمز</label><input id="fIcon" type="text" maxlength="8" placeholder="🧫" autocomplete="off" /></div>
@@ -121,7 +122,7 @@
               <h2>الفئات الأساسية</h2>
               <button class="btn btn-gold btn-sm" id="saveOverrides" type="button">💾 حفظ التغييرات</button>
             </div>
-            <p class="hint">أخفِ فئة من اللعبة أو حطّ لها صورة. الأسئلة نفسها في ملفات المشروع ولا تتغير من هنا.</p>
+            <p class="hint">أخفِ فئة من اللعبة، أو حطّ لها صورة، أو اضغط «عدّل الأسئلة» لتعديل أسئلتها وإضافة أسئلة جديدة.</p>
             <label class="search-field adm-search">
               <span class="sr-only">بحث</span>
               <input id="builtinSearch" type="search" placeholder="ابحث عن فئة…" autocomplete="off" />
@@ -156,6 +157,9 @@
     <script src="questions-kuwait.js"></script>
     <script src="questions-pack2.js"></script>
     <script src="questions-bio.js"></script>
+    <script src="gaming-pack.js"></script>
+    <script src="video-pack.js"></script>
+    <script src="expansion-pack.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>

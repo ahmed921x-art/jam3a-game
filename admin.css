@@ -333,7 +333,7 @@
 }
 .adm-bi {
   display: grid;
-  grid-template-columns: auto 1fr minmax(160px, 280px) auto;
+  grid-template-columns: auto 1fr minmax(160px, 280px) auto auto;
   gap: 10px;
   align-items: center;
   padding: 8px 10px;
@@ -378,7 +378,7 @@
 }
 @media (max-width: 720px) {
   .adm-bi {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr auto auto;
   }
   .adm-bi .bi-img {
     grid-column: 1 / -1;
@@ -570,3 +570,17 @@ input[data-data]::placeholder {
   height: 1px;
   background: var(--line-2);
 }
+
+/* تعديل الفئات الأساسية */
+.adm-note {
+  margin: -4px 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px dashed var(--line-2);
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.bi-edit { white-space: nowrap; }
+.adm-q.is-media .q { border-inline-start: 4px solid var(--accent, #c3e813); }
