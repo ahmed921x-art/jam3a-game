@@ -807,3 +807,34 @@ body:has(#mqModal.active) .toast.show { transform: translate(-50%, 0); }
   .mq-stage.loading .mq-yt-pause b,
   .mq-stage.loading .mqa-btn.big { animation: none; opacity: 0.6; }
 }
+
+/* ---------- مشغّل YouTube المشترك (يُرسم فوق مكان المقطع في السؤال) ---------- */
+.mq-stage.yt-dock,
+.yt-dock {
+  position: fixed;
+  z-index: 51; /* فوق نافذة السؤال (50) وتحت الرسائل (300) */
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius);
+  box-shadow: none;
+  background: transparent;
+  min-height: 0;
+  overflow: hidden;
+  pointer-events: none; /* الأزرار والنقر تبقى لعناصر السؤال تحته */
+}
+.yt-dock .mq-yt {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border: 0;
+}
+.yt-dock.off {
+  left: -10000px !important;
+  top: 0 !important;
+  width: 320px !important;
+  height: 180px !important;
+  clip-path: none !important;
+  visibility: hidden;
+}

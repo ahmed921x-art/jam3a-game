@@ -470,7 +470,7 @@ const Match = (() => {
   function showBoard() {
     FX.pauseBackground(true); // خلفية ثابتة طوال المباراة: أخف على أجهزة البوث
     prefetchBoard();
-    if (m.board.some((c) => c.cells.some((x) => x.q.yt))) loadYT().catch(() => {}); // مشغّل YouTube جاهز قبل أول سؤال
+    if (m.board.some((c) => c.cells.some((x) => x.q.yt))) ensureDock().catch(() => {}); // مشغّل YouTube جاهز قبل أول سؤال
     renderBoard();
     Game.showScreen("matchBoardScreen", true);
   }
@@ -1026,7 +1026,95 @@ const Match = (() => {
   function ytError(code) {
     if (code === 101 || code === 150) return L("تعذّر تشغيل الفيديو داخل اللعبة.", "The video could not play inside the game.");
     if (code === 100) return L("المقطع محذوف أو خاص.", "The video was removed or is private.");
+    // 153: YouTube لم يستلم عنوان الموقع (Referer). يحدث إذا منعه المتصفح أو إضافة خصوصية
+    if (code === 153)
+      return L(
+        "YouTube رفض التشغيل لأن المتصفح أخفى عنوان الموقع. في Brave: اضغط أيقونة الأسد ← أوقف Shields لهذا الموقع، ثم أعد تحميل الصفحة.",
+        "YouTube refused because the browser hid this site's address. In Brave: click the lion icon → turn Shields off for this site, then reload."
+      );
     return L("تعذّر تشغيل المقطع.", "The clip couldn't be played.");
+  }
+
+  /* مشغّل YouTube واحد يُنشأ مع فتح اللوحة ويُعاد استخدامه لكل سؤال.
+     إنشاء مشغّل جديد لكل سؤال كان يكلّف ثوانٍ (صفحة embed + سكربتات المشغّل) قبل أن يبدأ المقطع،
+     أما تبديل المقطع في مشغّل جاهز فيحمّل الفيديو فقط.
+     الإطار لا يُنقل داخل الصفحة (النقل يعيد تحميله)، بل يُرسم ثابتاً فوق مكانه في السؤال (#mqYt). */
+  const YT_VARS = { controls: 0, disablekeyboard: 1, fs: 0, iv_load_policy: 3, rel: 0, playsinline: 1, cc_load_policy: 0 };
+  const dock = { el: null, p: null, ready: null, cur: null, raf: 0, sig: "" };
+  function ensureDock() {
+    if (dock.ready) return dock.ready;
+    dock.el = document.createElement("div");
+    dock.el.className = "yt-dock off";
+    dock.el.setAttribute("aria-hidden", "true");
+    dock.el.innerHTML = `<div class="mq-yt"><div class="mq-yt-frame"><div id="ytDockPlayer"></div></div><div class="ytd-over"></div></div>`;
+    document.body.appendChild(dock.el);
+    dock.ready = loadYT()
+      .then(
+        () =>
+          new Promise((resolve, reject) => {
+            const t = setTimeout(() => reject(new Error("yt-timeout")), 25000);
+            dock.p = new YT.Player("ytDockPlayer", {
+              host: "https://www.youtube-nocookie.com",
+              width: "100%",
+              height: "100%",
+              playerVars: { ...YT_VARS, origin: location.origin },
+              events: {
+                onReady: () => {
+                  clearTimeout(t);
+                  resolve(dock.p);
+                },
+                onStateChange: (e) => dock.cur && dock.cur.onState(e.data),
+                onError: (e) => dock.cur && dock.cur.onError(e.data),
+              },
+            });
+          })
+      )
+      .catch((err) => {
+        // نعيد المحاولة في السؤال التالي بمشغّل جديد
+        try {
+          if (dock.p) dock.p.destroy();
+        } catch {}
+        if (dock.el) dock.el.remove();
+        Object.assign(dock, { el: null, p: null, ready: null, cur: null });
+        throw err;
+      });
+    return dock.ready;
+  }
+  // يرسم المشغّل فوق مكانه في السؤال، مقصوصاً على الجزء الظاهر من النافذة، وينسخ حالتها (كشف/تشغيل/تحميل)
+  function dockSync() {
+    dock.raf = 0;
+    if (!dock.el) return;
+    const slot = $("#mqYt");
+    const modals = $$(".modal.active");
+    const show = dock.cur && slot && modals[modals.length - 1] === $("#mqModal");
+    if (!show) {
+      dock.el.classList.add("off");
+      dock.sig = "";
+      if (dock.cur) dock.raf = requestAnimationFrame(dockSync);
+      return;
+    }
+    dock.raf = requestAnimationFrame(dockSync);
+    const r = slot.getBoundingClientRect();
+    const b = $("#mqBox").getBoundingClientRect();
+    const foot = $("#mqControls");
+    const bottom = Math.min(b.bottom, foot && foot.firstElementChild ? foot.getBoundingClientRect().top : b.bottom);
+    const clip = [Math.max(0, b.top - r.top), Math.max(0, r.right - b.right), Math.max(0, r.bottom - bottom), Math.max(0, b.left - r.left)].map((v) => Math.round(v));
+    const stage = $("#mqStage");
+    const msg = $("#mqYtMsg");
+    const sig = [r.left, r.top, r.width, r.height, clip, stage ? stage.className : "", slot.className, msg ? msg.textContent : ""].join("|");
+    if (sig === dock.sig) return;
+    dock.sig = sig;
+    Object.assign(dock.el.style, {
+      left: r.left + "px",
+      top: r.top + "px",
+      width: r.width + "px",
+      height: r.height + "px",
+      clipPath: `inset(${clip.map((v) => v + "px").join(" ")})`,
+    });
+    dock.el.className = "yt-dock " + (stage ? stage.className : "mq-stage");
+    dock.el.firstElementChild.className = slot.className;
+    const dmsg = $(".mq-yt-msg", dock.el);
+    if (dmsg && msg) dmsg.textContent = msg.textContent;
   }
 
   function ytAdapter(id, spec) {
@@ -1045,15 +1133,26 @@ const Match = (() => {
       end: () => (a.limit > a.start ? a.limit : ready ? p.getDuration() : 0),
       time: () => (ready ? p.getCurrentTime() : a.start),
       playing: () => ready && !warming && p.getPlayerState() === 1,
+      soundOnPlay: false,
+      loaded: false, // وصل المقطع الجديد للمشغّل المشترك (قبلها getCurrentTime يخص المقطع السابق)
       play: () => {
         a.pending = true;
         if (!ready) return void (a.wantPlay = true);
+        if (!a.loaded) {
+          // ما زال يحمّل: نعيد طلبه من بداية المقطع الآمنة بدل seekTo على المقطع السابق
+          warming = false;
+          p.mute();
+          a.soundOnPlay = !spec.mute;
+          p.loadVideoById({ videoId: id, startSeconds: a.start });
+          return;
+        }
         const t = p.getCurrentTime();
         if (warming || p.getPlayerState() === 0 || t < a.start - 1 || (a.limit && t >= a.limit - 0.3)) p.seekTo(a.start, true);
         warming = false;
-        if (spec.mute) p.mute();
-        else p.unMute();
-        p.setVolume(Math.round(a.vol * 100));
+        // Brave (وغيره) يمنع تشغيل المقطع بالصوت إذا جاء الأمر من الصفحة لا من داخل مشغّل YouTube،
+        // لكنه يسمح بالتشغيل الصامت ثم رفع الصوت أثناء التشغيل: نبدأ صامتين ونرفع الصوت عند الحالة 1
+        p.mute();
+        a.soundOnPlay = !spec.mute;
         p.playVideo();
       },
       pause: () => {
@@ -1068,9 +1167,43 @@ const Match = (() => {
       destroy: () => {
         dead = true;
         clearInterval(poll);
-        try {
-          if (p) p.destroy();
-        } catch {}
+        if (dock.cur === a) {
+          dock.cur = null;
+          try {
+            p.pauseVideo();
+            p.mute();
+          } catch {}
+          dockSync();
+        }
+      },
+      onState: (st) => {
+        if (dead) return;
+        if (st === 1) {
+          a.loaded = true;
+          try {
+            p.unloadModule("captions"); // الترجمة التلقائية قد تكشف الإجابة
+          } catch {}
+          $("#mqYt")?.classList.add("ready");
+          if (!warming && a.soundOnPlay) {
+            a.soundOnPlay = false;
+            p.unMute();
+            p.setVolume(Math.round(a.vol * 100));
+          }
+        }
+        if (!warming && (st === 1 || st === 0)) a.pending = false;
+        if (warming && st === 1) {
+          // صار عنده مخزون كافٍ: نوقف ونرجع للبداية بصمت
+          warming = false;
+          p.pauseVideo();
+          p.seekTo(a.start, true);
+          p.setVolume(Math.round(a.vol * 100)); // يبقى صامتاً حتى يضغطوا تشغيل
+        }
+        paintMedia();
+      },
+      onError: (code) => {
+        if (dead) return;
+        a.pending = false;
+        mediaError(ytError(code), id, a.start);
       },
     };
     const tick = () => {
@@ -1078,50 +1211,32 @@ const Match = (() => {
       if (ready && !warming && a.limit && p.getPlayerState() === 1 && p.getCurrentTime() >= a.limit) p.pauseVideo();
       paintMedia();
     };
-    loadYT()
-      .then(() => {
-        if (dead || !$("#mqYtPlayer")) return;
-        p = new YT.Player("mqYtPlayer", {
-          host: "https://www.youtube-nocookie.com",
-          videoId: id,
-          width: "100%",
-          height: "100%",
-          playerVars: { start: Math.floor(a.start), controls: 0, disablekeyboard: 1, fs: 0, iv_load_policy: 3, rel: 0, playsinline: 1, cc_load_policy: 0, origin: location.origin },
-          events: {
-            onReady: () => {
-              if (dead) return;
-              ready = true;
-              try {
-                p.unloadModule("captions"); // الترجمة التلقائية قد تكشف الإجابة
-              } catch {}
-              $("#mqYt")?.classList.add("ready");
-              poll = setInterval(tick, 200);
-              if (a.wantPlay) a.play();
-              else {
-                warming = true;
-                p.mute();
-                p.playVideo();
-              }
-              paintMedia();
-            },
-            onStateChange: (e) => {
-              if (!warming && (e.data === 1 || e.data === 0)) a.pending = false;
-              if (warming && e.data === 1) {
-                // صار عنده مخزون كافٍ: نوقف ونرجع للبداية بصمت
-                warming = false;
-                p.pauseVideo();
-                p.seekTo(a.start, true);
-                if (!spec.mute) p.unMute();
-                p.setVolume(Math.round(a.vol * 100));
-              }
-              paintMedia();
-            },
-            onError: (e) => {
-              a.pending = false;
-              mediaError(ytError(e.data), id, a.start);
-            },
-          },
-        });
+    ensureDock()
+      .then((player) => {
+        if (dead || !$("#mqYt")) return;
+        p = player;
+        if (dock.cur && dock.cur !== a) dock.cur.destroy();
+        dock.cur = a;
+        // نسخة من أغطية السؤال (بطاقة الصوت/شاشة الإيقاف/الدرع) فوق المشغّل
+        const over = $(".ytd-over", dock.el);
+        over.innerHTML = $$("#mqYt > .mq-yt-shield, #mqYt > .mq-yt-cover, #mqYt > .mq-yt-pause, #mqYt > .mq-yt-msg")
+          .map((x) => x.outerHTML.replace(/\sid="[^"]*"/g, ""))
+          .join("");
+        dock.sig = "";
+        if (!dock.raf) dockSync();
+        ready = true;
+        poll = setInterval(tick, 200);
+        p.setVolume(Math.round(a.vol * 100));
+        if (a.wantPlay) {
+          p.mute();
+          a.soundOnPlay = !spec.mute;
+          p.loadVideoById({ videoId: id, startSeconds: a.start });
+        } else {
+          warming = true;
+          p.mute();
+          p.loadVideoById({ videoId: id, startSeconds: a.start });
+        }
+        paintMedia();
       })
       .catch(() => mediaError(L("تعذّر الاتصال بـ YouTube. تأكد من الإنترنت.", "Couldn't reach YouTube. Check the connection."), id, a.start));
     return a;
