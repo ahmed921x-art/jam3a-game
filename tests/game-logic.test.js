@@ -13,6 +13,17 @@ test('board selects two unique questions per value and rejects repeats across ca
   assert.throws(() => rules.pickBoard([category('alpha'), category('alpha')], false));
 });
 
+test('new games use unseen questions before recycling older ones', () => {
+  const c = category('repeat');
+  const first = rules.pickBoard([c], false);
+  const seen = first[0].questions.map(rules.historyKey);
+  const second = rules.pickBoard([c], false, Math.random, seen);
+  assert.equal(second[0].questions.filter((q) => seen.includes(rules.historyKey(q))).length, 3);
+  for (const points of [200, 400, 600]) {
+    assert.ok(second[0].questions.some((q) => q.points === points && !seen.includes(rules.historyKey(q))));
+  }
+});
+
 test('awarding a steal gives points only once and alternates selection turn', () => {
   const result = rules.award(teams, 1, 2, 400);
   assert.deepEqual(result.teams.map((t) => t.score), [0, 400]);

@@ -128,6 +128,8 @@ const Match = (() => {
   const groupOf = (c) => (c.custom ? "custom" : c.group || "general");
   // ترتيب المجموعات في صفحة الإعداد: [المعرّف، الرمز، الاسم، الاسم بالإنجليزي]
   const GROUPS = [
+    ["music", "🎤", "أغاني", "Songs"],
+    ["sport", "⚽", "كرة القدم", "Football"],
     ["gaming", "🎮", "ألعاب فيديو", "Video games"],
     ["anime", "🎌", "أنمي", "Anime"],
     ["cartoon", "📺", "كرتون زمان", "Classic cartoons"],
@@ -412,7 +414,7 @@ const Match = (() => {
     });
     let board;
     try {
-      board = R.buildBoard(chosen, { values: cfg.values, random: true });
+      board = R.buildBoard(chosen, { values: cfg.values, random: true, history: Game.questionHistory() });
     } catch {
       return toast(L("بعض الفئات لا تحتوي أسئلة فريدة كافية؛ غيّر الاختيار", "Some categories lack enough unique questions"));
     }
@@ -427,6 +429,7 @@ const Match = (() => {
     undoStack = [];
     savePrefs();
     save();
+    Game.rememberQuestions(board.flatMap((c) => c.cells.map((cell) => cell.q)));
     showBoard();
     Sound.open();
     toast(L(`🎲 يبدأ ${m.sides[m.turn].name}`, `🎲 ${m.sides[m.turn].name} starts`));

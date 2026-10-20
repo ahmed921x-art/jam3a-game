@@ -3,6 +3,8 @@ const BioRules = (() => {
   const TIERS = [200, 400, 600];
   const text = (value) => typeof value === "string" ? value.trim() : "";
   const key = (value) => text(value).normalize("NFKC").replace(/\s+/g, " ").toLowerCase();
+  const historyKey = (q) => key(q?.q) + "|" + (q?.img || q?.audio || q?.video || q?.yt || "");
+  const historyRank = (history) => new Map((Array.isArray(history) ? history : []).map((id, i) => [id, i]));
   const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
   const safeImage = (value) => {
     const v = text(value);
@@ -29,8 +31,9 @@ const BioRules = (() => {
     return validCategory(cleaned) ? cleaned : null;
   }
 
-  function pickBoard(categories, random = true, rng = Math.random) {
+  function pickBoard(categories, random = true, rng = Math.random, history = []) {
     const used = new Set();
+    const rank = historyRank(history);
     return categories.map((cat) => {
       if (!validCategory(cat)) throw new Error(`Invalid category: ${cat?.name || "?"}`);
       const questions = [];
@@ -41,6 +44,7 @@ const BioRules = (() => {
           const j = Math.floor(rng() * (i + 1));
           [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
         }
+        ordered.sort((a, b) => (rank.get(historyKey(a)) ?? -1) - (rank.get(historyKey(b)) ?? -1));
         const picked = [];
         for (const q of ordered) {
           const id = key(q.q);
@@ -118,7 +122,7 @@ const BioRules = (() => {
     return true;
   }
 
-  return { TIERS, key, validQuestion, validCategory, cleanCategory, pickBoard, replacement, award, clampWager, applyGolden, applyMatchRecord, advanceTimer, validateSnapshot };
+  return { TIERS, key, historyKey, validQuestion, validCategory, cleanCategory, pickBoard, replacement, award, clampWager, applyGolden, applyMatchRecord, advanceTimer, validateSnapshot };
 })();
 if (typeof globalThis !== "undefined") globalThis.BioRules = BioRules;
 if (typeof module !== "undefined") module.exports = BioRules;

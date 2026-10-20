@@ -26,6 +26,15 @@ test('every column is 200 200 400 400 600 600 with unique questions', () => {
   assert.deepEqual(R.buildBoard([cat('x')], { values: 100 })[0].cells.map((c) => c.points), [100, 100, 200, 200, 300, 300]);
 });
 
+test('new matches exhaust unseen questions before repeating older questions', () => {
+  const c = cat('repeat', 4);
+  const first = R.buildBoard([c], { random: false });
+  const history = first[0].cells.map((cell) => `${cell.q.q.toLowerCase()}|`);
+  const second = R.buildBoard([c], { random: false, history });
+  const secondIds = second[0].cells.map((cell) => `${cell.q.q.toLowerCase()}|`);
+  assert.equal(secondIds.filter((id) => history.includes(id)).length, 0);
+});
+
 test('a category needs two different questions per difficulty', () => {
   assert.ok(R.canFill(cat('z')));
   assert.ok(!R.canFill(cat('z', 1)));

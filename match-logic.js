@@ -70,13 +70,15 @@ const MatchRules = (() => {
   }
 
   // عمود الفئة: سؤالان مختلفان من كل مستوى بالترتيب سهل، سهل، متوسط، متوسط، صعب، صعب
-  function pickColumn(cat, random, used, rng) {
+  function pickColumn(cat, random, used, rng, history = []) {
     if (!cat || !Array.isArray(cat.questions)) throw new Error("Invalid category");
     const taken = new Set();
     const ans = new Set(); // لا تتكرر نفس الإجابة مرتين في العمود
     return TIERS.flatMap((points, tier) => {
       let pool = cat.questions.filter((q) => tierOf(q) === tier);
       if (random) pool = shuffle(pool, rng);
+      const rank = new Map(history.map((id, i) => [id, i]));
+      pool.sort((a, b) => (rank.get(qKey(a)) ?? -1) - (rank.get(qKey(b)) ?? -1));
       const picked = [];
       for (const raw of pool) {
         const q = cleanQuestion(raw);
@@ -98,7 +100,7 @@ const MatchRules = (() => {
     const values = VALUES[opts.values] || VALUES[200];
     const used = new Set();
     return categories.map((cat, ci) => {
-      const col = pickColumn(cat, opts.random !== false, used, rng);
+      const col = pickColumn(cat, opts.random !== false, used, rng, Array.isArray(opts.history) ? opts.history : []);
       col.forEach((c) => used.add(qKey(c.q)));
       return {
         id: text(cat.id) || "c" + ci,

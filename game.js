@@ -8,6 +8,21 @@ const Game = (() => {
   const LS_THEME = "sj_theme";
   const LS_LANG = "sj_lang";
   const LS_MODE = "sj_mode";
+  const LS_QUESTION_HISTORY = "bio_question_history_v1";
+
+  function questionHistory() {
+    try {
+      const value = JSON.parse(localStorage.getItem(LS_QUESTION_HISTORY));
+      return Array.isArray(value) ? value.filter((id) => typeof id === "string" && id.length <= 1000).slice(-3000) : [];
+    } catch { return []; }
+  }
+  function rememberQuestions(questions) {
+    try {
+      const fresh = questions.map(BioRules.historyKey);
+      const previous = questionHistory().filter((id) => !fresh.includes(id));
+      localStorage.setItem(LS_QUESTION_HISTORY, JSON.stringify([...previous, ...fresh].slice(-3000)));
+    } catch {}
+  }
 
   const THEMES = ["royal", "emerald", "crimson", "ocean", "violet"];
 
@@ -699,7 +714,7 @@ const Game = (() => {
 
     const cats = allCats();
     try {
-      state.cats = BioRules.pickBoard(state.selectedCats.map((i) => cats[i]), state.settings.random);
+      state.cats = BioRules.pickBoard(state.selectedCats.map((i) => cats[i]), state.settings.random, Math.random, questionHistory());
     } catch (error) {
       return toast(loc("هذه الفئات لا تحتوي أسئلة فريدة كافية؛ اختر فئات أخرى", "These categories need more unique questions. Choose others."));
     }
@@ -711,6 +726,7 @@ const Game = (() => {
     refreshScores();
     state.phase = "board";
     saveGame();
+    rememberQuestions(state.cats.flatMap((c) => c.questions));
     show("board");
     Sound.open();
   }
@@ -1868,7 +1884,7 @@ const Game = (() => {
     openHelp, closeHelp, shareResult, askClose, restartTimer,
     backToQuestion, openJudge, backToAnswer, lifelineStart, lifelineCancel,
     goldenShowQuestion, goldenReveal, goldenSetResult, goldenApply, refreshCatalog,
-    showScreen, recordMatch, toast, categories: allCats,
+    showScreen, recordMatch, toast, categories: allCats, questionHistory, rememberQuestions,
   };
 })();
 
