@@ -7,6 +7,7 @@
    4) أزرار رهان سريعة ومراحل الجولة الذهبية
    5) إدارة التركيز في النوافذ (فتح/إغلاق/Tab)
    6) عدّاد الإنجازات + حالة فارغة لمحرر الفئات
+   7) مباراة «سين وجيم»: أسماء الألوان، ملاحظة الحفظ المحلي، إعلان الدور، والتركيز بعد الحكم
    لا يستدعي أي دالة Game.* تغيّر الحالة.
    =========================================================== */
 
@@ -186,7 +187,13 @@
         lastFocus.set(m, document.activeElement);
         requestAnimationFrame(() => {
           const prefer =
-            m.id === "qModal" ? $("#showAnswerBtn") : m.id === "goldenModal" ? $("#wager1") : $(".auth-close, .editor-head .icon-btn", m);
+            m.id === "qModal"
+              ? $("#showAnswerBtn")
+              : m.id === "goldenModal"
+                ? $("#wager1")
+                : m.id === "mqModal"
+                  ? $('#mqControls [data-act="board"], #mqControls [data-act="reveal"], #mqControls [data-act="right"]', m)
+                  : $(".auth-close, .editor-head .icon-btn", m);
           const target = prefer && visible(prefer) ? prefer : $$(FOCUSABLE, m).find(visible);
           target && target.focus({ preventScroll: true });
         });
@@ -254,11 +261,84 @@
   }
   observe(edList, edEmpty, { childList: true });
 
+  /* ---------- 7) مباراة «سين وجيم» (match.js يبني DOM، وهنا تحسينات عرض فقط) ---------- */
+  const msScreen = $("#matchSetupScreen");
+  const mbScreen = $("#matchBoardScreen");
+  const mqModal = $("#mqModal");
+  const mqBox = $("#mqBox");
+  const SWATCH_NAMES = { "#9fe0ec": "col_aqua", "#e8949d": "col_rose", "#c3e813": "col_lime", "#e4a6f7": "col_orchid", "#f9e09b": "col_cream", "#ffb36b": "col_orange" };
+  const isGuest = () => typeof Auth === "undefined" || !!Auth.current().guest;
+
+  // أ) الإعداد: أسماء ألوان مفهومة بدل رموز hex، وملاحظة أين تُحفظ المباراة
+  let msBusy = false;
+  function decorateSetup() {
+    if (!msScreen || msBusy || !msScreen.firstElementChild) return;
+    msBusy = true;
+    $$(".ms-colors .swatch", msScreen).forEach((b) => {
+      const k = SWATCH_NAMES[(b.dataset.color || "").toLowerCase()];
+      if (!k) return;
+      const label = t("col_l", { name: t(k) });
+      if (b.getAttribute("aria-label") !== label) b.setAttribute("aria-label", label);
+      if (b.title !== label) b.title = label;
+    });
+    const text = t(isGuest() ? "ms_note_guest" : "ms_note_user");
+    let note = $(".ms-local", msScreen);
+    if (!note) {
+      note = document.createElement("p");
+      note.className = "ms-local";
+      const head = $(".page-head", msScreen);
+      head ? head.after(note) : msScreen.prepend(note);
+    }
+    if (note.textContent !== text) note.textContent = text;
+    msBusy = false;
+  }
+  observe(msScreen, decorateSetup, { childList: true, subtree: true });
+  if (typeof Auth !== "undefined") Auth.onChange(decorateSetup);
+
+  // ب) اللوحة: إعلان تغيّر الدور لقارئ الشاشة (match.js يعيد بناء .mb-turn فلا يُقرأ)
+  const live = document.createElement("p");
+  live.className = "sr-only";
+  live.setAttribute("aria-live", "polite");
+  document.body.appendChild(live);
+  let lastTurn = "";
+  observe(mbScreen, () => {
+    if (!mbScreen.classList.contains("active")) return;
+    const turn = $(".mb-turn", mbScreen);
+    const msg = turn ? turn.textContent.trim() : "";
+    if (msg && msg !== lastTurn) live.textContent = lastTurn = msg;
+  }, { childList: true });
+
+  // ج) السؤال: بعد كل حكم تُستبدل الأزرار، فننقل التركيز للزر التالي المنطقي
+  const lost = () => !document.activeElement || document.activeElement === document.body || !document.contains(document.activeElement);
+  function focusQuestion() {
+    if (!mqModal || !mqModal.classList.contains("active")) return;
+    if (!lost() && mqModal.contains(document.activeElement)) return;
+    const target = $('#mqControls [data-act="board"], #mqControls [data-act="reveal"], #mqControls [data-act="right"]', mqBox);
+    target && visible(target) && target.focus({ preventScroll: true });
+  }
+  // المراقِب يعمل بعد انتهاء match.js من بناء الأزرار، فلا حاجة لانتظار إطار رسم
+  observe(mqBox, focusQuestion, { childList: true, subtree: true });
+
+  // د) إغلاق السؤال: الخانة المفتوحة صارت مستخدمة، فالتركيز ينتقل لأقرب خانة مفتوحة في نفس الفئة
+  let openedCol = null;
+  observe(mqModal, () => {
+    if (mqModal.classList.contains("active")) {
+      const a = document.activeElement;
+      openedCol = a && a.dataset && a.dataset.ci !== undefined ? a.dataset.ci : null;
+      return;
+    }
+    // renderBoard يحدث مباشرة بعد الإغلاق، فاللوحة الجديدة موجودة هنا
+    if (!mbScreen || !mbScreen.classList.contains("active") || !lost()) return;
+    const next = (openedCol !== null && $(`button.mb-cell[data-ci="${openedCol}"]`, mbScreen)) || $("button.mb-cell", mbScreen);
+    next && next.focus({ preventScroll: true });
+  }, { attributes: true, attributeFilter: ["class"] });
+
   /* ---------- اللغة ---------- */
   document.addEventListener("i18n:change", () => {
     refreshStatus();
     relabelThemes();
     applyFilter();
     edEmpty();
+    decorateSetup();
   });
 })();

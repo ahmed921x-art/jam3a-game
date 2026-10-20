@@ -39,6 +39,7 @@
 }
 .ms-side {
   display: grid;
+  min-width: 0;
   gap: 8px;
   padding: 14px;
   border-radius: var(--radius);
@@ -122,6 +123,14 @@
 .ms-group small { font-size: 13px; font-weight: 600; color: var(--text-3); }
 .cat-tile[data-group="cartoon"] { --cc: var(--cream); }
 .ms-start.ready .sb-status { color: var(--success); }
+/* قبل اكتمال الفئات: الزر يبدو غير جاهز (يبقى قابلاً للضغط ويشرح السبب برسالة) */
+.ms-start:not(.ready) .btn-gold {
+  background: var(--surface-2);
+  color: var(--text-2);
+  box-shadow: none;
+  border-color: var(--line-2);
+}
+.ms-start .sb-status { font-weight: 700; }
 .ms-classic { text-align: center; margin: 4px 0 24px; }
 .ms-screen .seg { flex-wrap: wrap; }
 .ms-screen .set-row .seg-sm button { min-width: 44px; }
@@ -335,7 +344,8 @@ button.mb-cell:active { transform: scale(0.97); }
   direction: ltr;
   position: relative;
 }
-.mq-clock svg { width: 44px; height: 44px; transform: rotate(-90deg); }
+/* الحلقة فقط (ابن مباشر) — بدون ">" كانت أيقونتا الإيقاف والإعادة تدوران وتكبران */
+.mq-clock > svg { width: 44px; height: 44px; transform: rotate(-90deg); }
 .mq-clock .ring-bg { fill: none; stroke: var(--ink-3); stroke-width: 4; }
 .mq-clock .ring-fg { fill: none; stroke: var(--lime); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.25s linear, stroke 0.2s; }
 .mq-clock.low .ring-fg { stroke: var(--danger); }
@@ -373,7 +383,7 @@ button.mb-cell:active { transform: scale(0.97); }
 .mqt-l { color: var(--text-2); font-weight: 600; }
 .mqt-p { font-weight: 700; }
 .mq-turn.steal { animation: mqPulse 1.1s ease-in-out infinite; }
-.mq-turn.done { --c: var(--line-2); }
+.mq-turn.done { --c: var(--line-2); padding: 6px 12px; font-size: 15px; }
 @keyframes mqPulse {
   50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--c) 25%, transparent); }
 }
@@ -674,3 +684,112 @@ body:has(#mqModal.active) .aurora { display: none; }
 .mr-score { font-family: var(--font-display); font-weight: 800; font-size: 54px; line-height: 1; }
 .mr-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; color: var(--text-2); font-size: 13.5px; }
 .mr-sum { color: var(--text-3); font-size: 14px; margin-bottom: 10px; }
+
+/* ---------- ملاحظة الحفظ المحلي (يضيفها bio-ui.js) ---------- */
+.ms-local {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px dashed var(--line-2);
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.ms-local .link-btn { font-size: 14px; min-height: 32px; }
+
+/* ---------- التركيز ---------- */
+.mb-cell:focus-visible,
+.ms-mode:focus-visible,
+.ms-colors .swatch:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.mqa-bar:focus-visible { outline-offset: 4px; }
+
+/* ---------- اللمس: أهداف 44px على الشاشات اللمسية ---------- */
+@media (pointer: coarse) {
+  .ms-colors { gap: 6px; }
+  /* ستة ألوان في سطر واحد حتى على 320px: تتقلص حتى 30px وتكبر حتى 44px */
+  .ms-colors { flex-wrap: nowrap; }
+  .ms-colors .swatch { flex: 1 1 0; width: auto; height: auto; min-width: 30px; max-width: 44px; aspect-ratio: 1; }
+  .ms-chip { min-height: 40px; }
+  .ms-chip button { width: 36px; height: 36px; }
+  .ms-screen .seg-sm button,
+  .ms-screen .fchip,
+  .ms-screen .btn-sm,
+  .mb-team .sa-btns .btn,
+  .mqa-row2 .btn { min-height: 44px; }
+  .mb-team .score-adjust summary { min-height: 40px; display: flex; align-items: center; }
+  .mqa-bar { height: 18px; }
+}
+
+/* ---------- الرسائل المنبثقة لا تغطي الأزرار ---------- */
+body:has(#matchSetupScreen.active) .toast { bottom: 132px; }
+/* أثناء السؤال: أزرار الحكم في الأسفل، فتظهر الرسالة في الأعلى */
+body:has(#mqModal.active) .toast {
+  top: max(14px, env(safe-area-inset-top));
+  bottom: auto;
+  transform: translate(-50%, -160%);
+}
+body:has(#mqModal.active) .toast.show { transform: translate(-50%, 0); }
+
+/* ---------- اللوحة على الجوال: كل فئة صف كامل بدل تمرير أفقي ---------- */
+@media (max-width: 560px) {
+  .mb-screen .progress-chip { display: inline-block; }
+  .mb-turn {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: 8px 12px;
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: color-mix(in srgb, var(--ink-0) 88%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    font-size: 16px;
+  }
+  .mb-scroll { overflow: visible; padding-bottom: 0; }
+  .mb-board {
+    grid-template-columns: 1fr;
+    min-width: 0;
+    gap: 10px;
+  }
+  .mb-col {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 8px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+  }
+  .mb-head {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    height: auto;
+    padding: 2px 4px;
+    background: none;
+    border: 0;
+    text-align: start;
+  }
+  .mb-head img { width: 28px; height: 28px; border-radius: 8px; }
+  .mb-ic { font-size: 22px; }
+  .mb-name { font-size: 15px; -webkit-line-clamp: 1; }
+  .mb-tier { gap: 4px; }
+  .mb-cell {
+    min-height: 50px;
+    font-size: clamp(16px, 5vw, 20px);
+    border-radius: 12px;
+  }
+  /* رمز النوع فوق الرقم في المنتصف حتى لا يغطيه في الخانات الضيقة */
+  button.mb-cell:has(.mbc-type) { padding-top: 10px; }
+  .mbc-type { top: 2px; inset-inline: 0; text-align: center; font-size: 10px; line-height: 1; }
+  .mb-cell.used .mbc-pts { font-size: 12px; }
+  .mb-cell.used .mbc-who { font-size: 11px; padding: 0 3px; }
+}
