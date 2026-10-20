@@ -84,8 +84,8 @@ const MatchRules = (() => {
         const q = cleanQuestion(raw);
         if (!q) continue;
         const k = qKey(q);
-        // نفس اللعبة/الشخصية لا تظهر مرتين في عمود واحد (للأسئلة النصية مثل «صح أو خطأ» الإجابات تتكرر طبيعياً)
-        const a = q.type === "text" ? "" : key(q.a);
+        // أسئلة التعرف على الصوت/الصورة لا تكرر نفس الهوية؛ أسئلة الفيديو قد تشترك في نتيجة مختلفة السياق.
+        const a = q.type === "image" || q.type === "audio" ? key(q.a) : "";
         if (used.has(k) || taken.has(k) || (a && ans.has(a))) continue;
         taken.add(k);
         ans.add(a);

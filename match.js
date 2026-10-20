@@ -635,7 +635,7 @@ const Match = (() => {
       return `<div class="mq-yt ${q.type === "audio" ? "is-audio" : "is-video"}" id="mqYt">
           <div class="mq-yt-frame"><div id="mqYtPlayer"></div></div>
           <div class="mq-yt-shield" aria-hidden="true"></div>
-          ${q.type === "audio" ? `<div class="mq-yt-cover" aria-hidden="true"><span class="mqa-eq">${EQ}</span><span>🎧 ${esc(L("استمعوا وخمّنوا", "Listen and guess"))}</span></div>` : `<div class="mq-yt-pause" aria-hidden="true"><b>▶</b><span>${esc(L("اضغطوا تشغيل وخمّنوا اللعبة", "Press play and guess the game"))}</span></div>`}
+          ${q.type === "audio" ? `<div class="mq-yt-cover" aria-hidden="true"><span class="mqa-eq">${EQ}</span><span>🎧 ${esc(L("استمعوا وخمّنوا", "Listen and guess"))}</span></div>` : `<div class="mq-yt-pause" aria-hidden="true"><b>▶</b><span>${esc(L("اضغطوا تشغيل وخمّنوا", "Press play and guess"))}</span></div>`}
           <div class="mq-yt-msg" id="mqYtMsg">${esc(L("جاري تحميل المقطع من YouTube…", "Loading from YouTube…"))}</div>
         </div>${controlsHTML(false)}`;
     }
@@ -971,8 +971,9 @@ const Match = (() => {
   function mediaError(msg, yt, start) {
     const e = $("#mqaErr");
     if (!e) return;
+    pauseClock(true); // لا نخسر وقت الإجابة بسبب فشل تشغيل المقطع
     e.hidden = false;
-    e.innerHTML = esc(msg) + (yt ? ` <a href="https://www.youtube.com/watch?v=${esc(yt)}&t=${Math.floor(start || 0)}s" target="_blank" rel="noopener">${esc(L("افتحه على YouTube ↗", "Open on YouTube ↗"))}</a>` : "");
+    e.innerHTML = esc(msg) + (yt ? ` <a href="https://www.youtube.com/watch?v=${esc(yt)}&t=${Math.floor(start || 0)}s" target="_blank" rel="noopener">${esc(L("شاهد الفيديو على YouTube ↗ ثم تابع المؤقت", "Watch on YouTube ↗, then resume the timer"))}</a>` : "");
     const box = $("#mqYtMsg");
     if (box) box.textContent = msg;
   }
@@ -1015,7 +1016,7 @@ const Match = (() => {
   }
 
   function ytError(code) {
-    if (code === 101 || code === 150) return L("صاحب المقطع منع تشغيله خارج YouTube.", "The owner blocked playback outside YouTube.");
+    if (code === 101 || code === 150) return L("تعذّر تشغيل الفيديو داخل اللعبة.", "The video could not play inside the game.");
     if (code === 100) return L("المقطع محذوف أو خاص.", "The video was removed or is private.");
     return L("تعذّر تشغيل المقطع.", "The clip couldn't be played.");
   }
@@ -1273,7 +1274,7 @@ const Match = (() => {
      ==================================================== */
   function onKey(e) {
     if (!$("#mqModal").classList.contains("active") || !cur()) return;
-    if (e.target.closest("input, textarea, select")) return;
+    if (e.target.closest?.("input, textarea, select")) return;
     const c = cur();
     // Space = كشف الإجابة دائماً (حتى لو كان التركيز على زر التشغيل)
     if (e.key === " " && !c.revealed) {
@@ -1301,7 +1302,17 @@ const Match = (() => {
       if ($("#matchSetupScreen").classList.contains("active")) renderSetup();
       else if (m && $("#matchBoardScreen").classList.contains("active")) {
         renderBoard();
-        if (cur() && $("#mqModal").classList.contains("active")) updateQuestionUI();
+        if (cur() && $("#mqModal").classList.contains("active")) {
+          const points = $("#mqBox .q-points-badge");
+          if (points) points.textContent = `${curCell().points} ${L("نقطة", "pts")}`;
+          const answerLabel = $("#mqAnswer .view-label");
+          if (answerLabel) answerLabel.textContent = L("الإجابة الصحيحة", "Correct answer");
+          const closeLabel = $("#mqBox .mq-close .gh-lbl");
+          if (closeLabel) closeLabel.textContent = L("اللوحة", "Board");
+          const videoHint = $("#mqBox .mq-yt-pause span");
+          if (videoHint) videoHint.textContent = L("اضغطوا تشغيل وخمّنوا", "Press play and guess");
+          updateQuestionUI();
+        }
       } else if (m && $("#matchResultScreen").classList.contains("active")) showResult();
     });
   }

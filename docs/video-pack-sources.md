@@ -13,6 +13,15 @@
 - [محمد رمضان وجيمس — يا حبيبي](https://www.youtube.com/watch?v=Fkd7sI_khHY) — قناة الفنان الرسمية
 - [ماجد المهندس — واحشني موت](https://www.youtube.com/watch?v=ENRd5enAD6Q) — Rotana
 - [بلقيس — انتهى](https://www.youtube.com/watch?v=FK574gDKiM4) — قناة الفنانة الرسمية
+- [عمرو دياب — تملي معاك](https://www.youtube.com/watch?v=EgmXTmj62ic) — Mazzika
+- [نانسي عجرم — ما تيجي هنا](https://www.youtube.com/watch?v=UBBxGHvjNFM) — قناة الفنانة الرسمية
+- [حسين الجسمي — بشرة خير](https://www.youtube.com/watch?v=QUBvVTNRp4Q) — قناة الفنان الرسمية
+- [أصالة — بنت أكابر](https://www.youtube.com/watch?v=qgUWQgTmbtg) — قناة الفنانة الرسمية
+- [إليسا — عكس اللي شايفينها](https://www.youtube.com/watch?v=jCUbp-BCWR0) — Rotana
+- [نانسي عجرم — إنت إيه](https://www.youtube.com/watch?v=X4ICDHjGImA) — قناة الفنانة الرسمية
+- [إليسا — بتمون](https://www.youtube.com/watch?v=UUBf8bSGq54) — Rotana
+- [تامر حسني — كل مرة](https://www.youtube.com/watch?v=RxkFIR4j7UU) — قناة الفنان الرسمية
+- [ميريام فارس — قومي](https://www.youtube.com/watch?v=-eG8pFhOEZg) — قناة الفنانة الرسمية
 
 ## كرة القدم
 
@@ -27,3 +36,12 @@
 - [هولندا × الأرجنتين](https://www.youtube.com/watch?v=0i-gsQJg7jc)
 - [البرتغال × سويسرا](https://www.youtube.com/watch?v=HbE96IMB9Vw)؛ [FIFA توثق ثلاثية غونسالو راموس](https://www.fifa.com/en/tournaments/mens/worldcup/articles/every-hat-trick-history)
 - [نهائي الأرجنتين × فرنسا](https://www.youtube.com/watch?v=IipmpVcISXE)
+- [اليابان × إسبانيا](https://www.youtube.com/watch?v=91eoGiLSCgY)
+- [أستراليا × الدنمارك](https://www.youtube.com/watch?v=PYD42JzyuzI)
+- [ألمانيا × اليابان](https://www.youtube.com/watch?v=fXVWZS76QyE)
+- [الأرجنتين × كرواتيا](https://www.youtube.com/watch?v=gbkgbbKZ1CA)
+- [بولندا × الأرجنتين](https://www.youtube.com/watch?v=NpXbckymq5E)
+- [الأرجنتين × أستراليا](https://www.youtube.com/watch?v=KvSiRNO1BTY)
+- [إسبانيا × كوستاريكا](https://www.youtube.com/watch?v=f5Iph5tGRz0)
+- [البرازيل × صربيا](https://www.youtube.com/watch?v=kL0IkvLrQLM)
+- [الكاميرون × البرازيل](https://www.youtube.com/watch?v=rFgLU123HTE)
