@@ -635,7 +635,7 @@ const Match = (() => {
       return `<div class="mq-yt ${q.type === "audio" ? "is-audio" : "is-video"}" id="mqYt">
           <div class="mq-yt-frame"><div id="mqYtPlayer"></div></div>
           <div class="mq-yt-shield" aria-hidden="true"></div>
-          ${q.type === "audio" ? `<div class="mq-yt-cover" aria-hidden="true"><span class="mqa-eq">${EQ}</span><span>🎧 ${esc(L("استمعوا وخمّنوا", "Listen and guess"))}</span></div>` : `<div class="mq-yt-pause" aria-hidden="true"><b>▶</b><span>${esc(L("اضغطوا تشغيل وخمّنوا", "Press play and guess"))}</span></div>`}
+          ${q.type === "audio" ? `<div class="mq-yt-cover" aria-hidden="true"><span class="mqa-eq">${EQ}</span><span class="mq-idle">🎧 ${esc(L("استمعوا وخمّنوا", "Listen and guess"))}</span><span class="mq-load">⏳ ${esc(L("جاري تحميل المقطع…", "Loading the clip…"))}</span></div>` : `<div class="mq-yt-pause" aria-hidden="true"><b>▶</b><span class="mq-idle">${esc(L("اضغطوا تشغيل وخمّنوا", "Press play and guess"))}</span><span class="mq-load">⏳ ${esc(L("جاري تحميل المقطع…", "Loading the clip…"))}</span></div>`}
           <div class="mq-yt-msg" id="mqYtMsg">${esc(L("جاري تحميل المقطع من YouTube…", "Loading from YouTube…"))}</div>
         </div>${controlsHTML(false)}`;
     }
@@ -959,8 +959,12 @@ const Match = (() => {
     $(".mqa-bar").setAttribute("aria-valuenow", Math.round((pos / len) * 100));
     $("#mqaTime").textContent = media.end() ? `${fmt(pos)} / ${fmt(len)}` : fmt(pos);
     const playing = media.playing();
+    // ضغطوا تشغيل لكن المقطع ما زال يحمّل (مقاطع طويلة أو اتصال بطيء): نُظهر «جاري التحميل» بدل «اضغطوا تشغيل»
+    const loading = !playing && !!(media.loading && media.loading());
     $("#mqStage")?.classList.toggle("playing", playing);
+    $("#mqStage")?.classList.toggle("loading", loading);
     const b = $('#mqCtrls [data-act="play"]');
+    b.setAttribute("aria-busy", loading);
     if (b.dataset.on !== String(playing)) {
       b.dataset.on = playing;
       b.innerHTML = `<svg class="ic"><use href="#${playing ? "i-pause" : "i-play"}" /></svg>`;
@@ -985,8 +989,11 @@ const Match = (() => {
       limit: spec.limit,
       end: () => (a.limit > a.start ? a.limit : el.duration || 0),
       time: () => el.currentTime,
-      playing: () => !el.paused,
+      playing: () => !el.paused && el.readyState >= 3,
+      pending: false,
+      loading: () => a.pending || (!el.paused && el.readyState < 3),
       play: () => {
+        a.pending = true;
         if (a.limit && el.currentTime >= a.limit - 0.05) el.currentTime = a.start;
         return el.play();
       },
@@ -1008,7 +1015,8 @@ const Match = (() => {
       if (a.limit && el.currentTime >= a.limit) el.pause();
       paintMedia();
     });
-    ["play", "pause", "ended"].forEach((ev) => el.addEventListener(ev, paintMedia));
+    ["playing", "pause", "ended", "error"].forEach((ev) => el.addEventListener(ev, () => (a.pending = false)));
+    ["play", "playing", "waiting", "pause", "ended"].forEach((ev) => el.addEventListener(ev, paintMedia));
     el.addEventListener("error", () => {
       if (el.isConnected && el.getAttribute("src")) mediaError(L("تعذّر تحميل المقطع. تأكد من وجود الملف.", "The clip couldn't be loaded."));
     });
@@ -1032,10 +1040,13 @@ const Match = (() => {
       limit: spec.limit,
       vol: 0.9,
       wantPlay: false,
+      pending: false,
+      loading: () => a.pending || (ready && !warming && p.getPlayerState() === 3),
       end: () => (a.limit > a.start ? a.limit : ready ? p.getDuration() : 0),
       time: () => (ready ? p.getCurrentTime() : a.start),
       playing: () => ready && !warming && p.getPlayerState() === 1,
       play: () => {
+        a.pending = true;
         if (!ready) return void (a.wantPlay = true);
         const t = p.getCurrentTime();
         if (warming || p.getPlayerState() === 0 || t < a.start - 1 || (a.limit && t >= a.limit - 0.3)) p.seekTo(a.start, true);
@@ -1045,7 +1056,10 @@ const Match = (() => {
         p.setVolume(Math.round(a.vol * 100));
         p.playVideo();
       },
-      pause: () => ready && p.pauseVideo(),
+      pause: () => {
+        a.pending = a.wantPlay = false;
+        if (ready) p.pauseVideo();
+      },
       seek: (t) => ready && p.seekTo(t, true),
       volume: (v) => {
         a.vol = v;
@@ -1091,6 +1105,7 @@ const Match = (() => {
               paintMedia();
             },
             onStateChange: (e) => {
+              if (!warming && (e.data === 1 || e.data === 0)) a.pending = false;
               if (warming && e.data === 1) {
                 // صار عنده مخزون كافٍ: نوقف ونرجع للبداية بصمت
                 warming = false;
@@ -1101,7 +1116,10 @@ const Match = (() => {
               }
               paintMedia();
             },
-            onError: (e) => mediaError(ytError(e.data), id, a.start),
+            onError: (e) => {
+              a.pending = false;
+              mediaError(ytError(e.data), id, a.start);
+            },
           },
         });
       })
@@ -1187,13 +1205,20 @@ const Match = (() => {
   }
   function togglePlay() {
     if (!media) return;
-    if (media.playing()) media.pause();
-    else Promise.resolve(media.play()).catch(() => mediaError(L("تعذّر التشغيل.", "Playback failed.")));
+    // ضغطة أثناء التحميل تلغيه (نفس زر الإيقاف)
+    if (media.playing() || (media.loading && media.loading())) media.pause();
+    else
+      Promise.resolve(media.play()).catch(() => {
+        media.pending = false;
+        mediaError(L("تعذّر التشغيل.", "Playback failed."));
+      });
+    paintMedia();
   }
   function replay() {
     if (!media) return;
     media.seek(media.start);
-    Promise.resolve(media.play()).catch(() => {});
+    Promise.resolve(media.play()).catch(() => (media.pending = false));
+    paintMedia();
   }
   function seek(e, bar) {
     if (!media || !media.end()) return;

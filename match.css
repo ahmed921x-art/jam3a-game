@@ -793,3 +793,17 @@ body:has(#mqModal.active) .toast.show { transform: translate(-50%, 0); }
   .mb-cell.used .mbc-pts { font-size: 12px; }
   .mb-cell.used .mbc-who { font-size: 11px; padding: 0 3px; }
 }
+
+/* ---------- تحميل المقطع بعد الضغط على تشغيل ---------- */
+.mq-load { display: none; }
+.mq-stage.loading .mq-load { display: block; }
+.mq-stage.loading .mq-idle { display: none; }
+/* أثناء التحميل تبقى شاشة الإخفاء ظاهرة (YouTube يعرض العنوان قبل أن يبدأ) */
+.mq-stage.loading:not(.revealed) .mq-yt.is-video .mq-yt-pause { display: grid; }
+.mq-stage.loading .mq-yt-pause b,
+.mq-stage.loading .mqa-btn.big { animation: mqLoad 1s ease-in-out infinite; }
+@keyframes mqLoad { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .mq-stage.loading .mq-yt-pause b,
+  .mq-stage.loading .mqa-btn.big { animation: none; opacity: 0.6; }
+}
