@@ -35,22 +35,48 @@ const Match = (() => {
 
   let m = null; // حالة المباراة الحالية
   let undoStack = [];
-  const clock = { id: null, left: 0, total: 0, paused: false, endAt: 0, stage: "" };
+  const clock = { id: null, left: 0, total: 0, paused: false, endAt: 0, stage: "", question: "" };
   let blur = 0; // تشويش الصورة الحالي
   let busy = false; // يمنع النقر المزدوج أثناء الحركة
 
   /* ---------------- تخزين ---------------- */
   const storeKey = () => (typeof Auth !== "undefined" ? Auth.key("match") : "bio_match");
+  const timerKey = () => storeKey() + ":timer";
+  function timerSnapshot() {
+    if (!m || m.phase !== "question" || !m.current || clock.total <= 0 ||
+        clock.stage !== m.current.stage || clock.question !== `${m.current.ci}:${m.current.ri}`) return null;
+    return {
+      stage: clock.stage,
+      question: clock.question,
+      left: clock.paused ? clock.left : R.clockRemaining(clock.endAt, Date.now(), clock.total),
+    };
+  }
+  function saveTimer() {
+    try {
+      const snapshot = timerSnapshot();
+      if (snapshot) localStorage.setItem(timerKey(), JSON.stringify(snapshot));
+      else localStorage.removeItem(timerKey());
+    } catch {}
+  }
   function save() {
     try {
-      if (!m || m.phase === "done") localStorage.removeItem(storeKey());
-      else localStorage.setItem(storeKey(), JSON.stringify({ m, undoStack: undoStack.slice(-10) }));
+      if (!m || m.phase === "done") {
+        localStorage.removeItem(storeKey());
+        localStorage.removeItem(timerKey());
+      }
+      else {
+        localStorage.setItem(storeKey(), JSON.stringify({ m, undoStack: undoStack.slice(-10) }));
+        saveTimer();
+      }
     } catch {}
   }
   function loadSaved() {
     try {
       const raw = JSON.parse(localStorage.getItem(storeKey()));
-      return raw && R.validate(raw.m) ? raw : null;
+      if (!raw || !R.validate(raw.m)) return null;
+      try { raw.timer = JSON.parse(localStorage.getItem(timerKey())) || raw.timer || null; }
+      catch { raw.timer = raw.timer || null; }
+      return raw;
     } catch {
       return null;
     }
@@ -275,6 +301,7 @@ const Match = (() => {
       if (!confirm(L("حذف المباراة المحفوظة؟", "Discard the saved match?"))) return;
       m = null;
       try { localStorage.removeItem(storeKey()); } catch {}
+      try { localStorage.removeItem(timerKey()); } catch {}
       return renderSetup();
     }
     if (act === "editor") return Game.openEditor();
@@ -409,7 +436,7 @@ const Match = (() => {
     m = saved.m;
     undoStack = Array.isArray(saved.undoStack) ? saved.undoStack.filter(R.validate) : [];
     showBoard();
-    if (m.phase === "question") openQuestionUI(true);
+    if (m.phase === "question") openQuestionUI(true, saved.timer);
     if (m.phase === "done") showResult();
   }
 
@@ -553,9 +580,9 @@ const Match = (() => {
 
   function goHome() {
     stopMedia();
+    save();
     stopClock();
     $("#mqModal").classList.remove("active");
-    save();
     FX.pauseBackground(false);
     Game.goLanding();
   }
@@ -611,7 +638,7 @@ const Match = (() => {
     return "";
   }
 
-  function openQuestionUI(restored) {
+  function openQuestionUI(restored, savedTimer = null) {
     const c = cur();
     if (!c) return;
     specCache = null; // مقطع عشوائي جديد لكل سؤال
@@ -650,7 +677,7 @@ const Match = (() => {
     $("#mqModal").classList.add("active");
     updateQuestionUI(restored);
     if (!restored) startStageClock();
-    else if (c.stage !== "resolved") startStageClock(true);
+    else if (c.stage !== "resolved") startStageClock(true, savedTimer);
     box.scrollTop = 0;
   }
 
@@ -814,7 +841,7 @@ const Match = (() => {
   }
 
   /* ---------------- المؤقت ---------------- */
-  function startStageClock(paused = false) {
+  function startStageClock(paused = false, savedTimer = null) {
     stopClock();
     const c = cur();
     if (!c || c.stage === "resolved") return;
@@ -827,21 +854,27 @@ const Match = (() => {
     box.hidden = false;
     box.classList.remove("timeup");
     clock.total = total;
-    clock.left = total;
-    clock.paused = paused || c.revealed;
-    clock.endAt = Date.now() + total * 1000;
+    clock.stage = c.stage;
+    clock.question = `${c.ci}:${c.ri}`;
+    const restored = paused ? R.restoredClock(savedTimer, total, clock.stage, clock.question) : null;
+    clock.left = restored ? restored.left : total;
+    clock.paused = paused || c.revealed || clock.left === 0;
+    clock.endAt = Date.now() + clock.left * 1000;
     paintClock();
-    clock.id = setInterval(tickClock, 250);
+    if (clock.left > 0) clock.id = setInterval(tickClock, 250);
+    else box.classList.add("timeup");
+    saveTimer();
   }
   function tickClock() {
     if (clock.paused) {
-      clock.endAt += 250;
+      clock.endAt = Date.now() + clock.left * 1000;
       return;
     }
-    const left = Math.max(0, Math.ceil((clock.endAt - Date.now()) / 1000));
+    const left = R.clockRemaining(clock.endAt, Date.now(), clock.total);
     if (left !== clock.left) {
       clock.left = left;
       paintClock();
+      saveTimer();
       if (left > 0 && left <= 5) Sound.tickLow();
       if (left === 0) {
         clearInterval(clock.id);
@@ -867,16 +900,23 @@ const Match = (() => {
   function togglePause() {
     if (!clock.id) return;
     clock.paused = !clock.paused;
+    clock.endAt = Date.now() + clock.left * 1000;
     paintClock();
+    saveTimer();
   }
   function pauseClock(v) {
     if (!clock.id) return;
     clock.paused = v;
+    clock.endAt = Date.now() + clock.left * 1000;
     paintClock();
+    saveTimer();
   }
   function stopClock() {
     if (clock.id) clearInterval(clock.id);
     clock.id = null;
+    clock.total = 0;
+    clock.stage = "";
+    clock.question = "";
   }
 
   /* ---------------- الوسائط ---------------- */

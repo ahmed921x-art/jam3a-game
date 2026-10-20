@@ -114,6 +114,21 @@ const MatchRules = (() => {
   const CLIP_AUTO = [12, 8, 5];
   const DEFAULT_RULES = { timer: 30, stealTimer: 15, steal: "full", penalty: "none", clip: 0 };
 
+  function clockRemaining(endAt, now, total) {
+    if (!Number.isFinite(total) || total <= 0) return 0;
+    const limit = Math.ceil(total);
+    if (!Number.isFinite(endAt) || !Number.isFinite(now)) return limit;
+    return Math.max(0, Math.min(limit, Math.ceil((endAt - now) / 1000)));
+  }
+
+  function restoredClock(snapshot, total, stage, question) {
+    if (!Number.isFinite(total) || total <= 0) return null;
+    const limit = Math.ceil(total);
+    if (!snapshot || snapshot.stage !== stage || snapshot.question !== question || !Number.isFinite(snapshot.left))
+      return { left: limit, paused: true };
+    return { left: Math.max(0, Math.min(limit, Math.ceil(snapshot.left))), paused: true };
+  }
+
   // مقطع عشوائي داخل فترة آمنة: يفضّل الفترات التي تتسع للطول كاملاً،
   // وإلا يقصّر المقطع على طول الفترة حتى لا يخرج منها (فلا يُسمع الاسم أبداً)
   function pickClip(q, len, rng = Math.random) {
@@ -286,19 +301,31 @@ const MatchRules = (() => {
   function validate(m) {
     if (!m || m.version !== 2 || !Array.isArray(m.sides) || m.sides.length !== 2 || !Array.isArray(m.board) || !m.board.length) return false;
     if (!["board", "question", "done"].includes(m.phase) || ![0, 1].includes(m.turn)) return false;
-    if (m.sides.some((s) => !s || !text(s.name) || !Number.isFinite(s.score) || !Array.isArray(s.players))) return false;
-    if (m.board.some((c) => !c || !Array.isArray(c.cells) || !c.cells.length || c.cells.some((x) => !x || !x.q || !Number.isFinite(x.points) || !["open", "used"].includes(x.status)))) return false;
+    if (!m.rules || !["off", "full", "half"].includes(m.rules.steal) ||
+        !["none", "half", "full"].includes(m.rules.penalty) ||
+        !Number.isFinite(m.rules.timer) || m.rules.timer < 0 || m.rules.timer > 300 ||
+        !Number.isFinite(m.rules.stealTimer) || m.rules.stealTimer < 0 || m.rules.stealTimer > 300) return false;
+    if (m.sides.some((s) => !s || !text(s.name) || !Number.isFinite(s.score) || !Array.isArray(s.players) ||
+        s.players.some((p) => !text(p)) || !Number.isInteger(s.playerIdx) || s.playerIdx < 0)) return false;
+    if (m.board.some((c) => !c || !Array.isArray(c.cells) || c.cells.length !== 6 ||
+        c.cells.some((x, i) => !x || x.tier !== Math.floor(i / 2) || !cleanQuestion(x.q) ||
+          !Number.isFinite(x.points) || x.points <= 0 || !["open", "used"].includes(x.status)))) return false;
     if (m.phase === "question") {
       const cur = m.current;
-      if (!cur || !cellAt(m, cur.ci, cur.ri)) return false;
-      if (cur.stage !== "resolved" && cellAt(m, cur.ci, cur.ri).status !== "open") return false;
-    }
+      if (!cur || !Number.isInteger(cur.ci) || !Number.isInteger(cur.ri) || !cellAt(m, cur.ci, cur.ri) ||
+          !["answer", "steal", "resolved"].includes(cur.stage) || ![0, 1].includes(cur.chooser) ||
+          ![0, 1].includes(cur.team) || typeof cur.revealed !== "boolean" || !Array.isArray(cur.attempts)) return false;
+      if ((cur.stage === "resolved") !== (cellAt(m, cur.ci, cur.ri).status === "used")) return false;
+      if (cur.stage === "answer" && cur.team !== cur.chooser) return false;
+      if (cur.stage === "steal" && cur.team === cur.chooser) return false;
+    } else if (m.current !== null) return false;
     return true;
   }
 
   return {
     TIERS, PER_TIER, VALUES, CLIP_AUTO, TYPES, DEFAULT_RULES, tierOf, cleanQuestion, canFill, buildBoard, pickClip, pickStart, newMatch,
     open, reveal, judge, skip, close, adjust, setTurn, finish, winner, currentPlayer,
+    clockRemaining, restoredClock,
     remaining, total, validate, stealValue, penaltyFor, other,
   };
 })();

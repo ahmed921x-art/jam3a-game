@@ -108,6 +108,26 @@ test('media fields are sanitised', () => {
   assert.deepEqual(R.cleanQuestion({ q: 'x', a: 'y', win: [[5, 3], [1, 9], 'x'] }).win, [[1, 9]]);
 });
 
+test('countdown can be restored after reload without granting extra time', () => {
+  assert.equal(R.clockRemaining(30_000, 21_200, 30), 9);
+  assert.equal(R.clockRemaining(30_000, 45_000, 30), 0);
+  assert.equal(R.clockRemaining(999_999, 0, 30), 30);
+  assert.deepEqual(R.restoredClock({ stage: 'answer', question: '2:4', left: 9 }, 30, 'answer', '2:4'), { left: 9, paused: true });
+  assert.deepEqual(R.restoredClock({ stage: 'answer', question: '2:4', left: 999 }, 30, 'answer', '2:4'), { left: 30, paused: true });
+  assert.deepEqual(R.restoredClock({ stage: 'answer', question: '2:4', left: 9 }, 15, 'steal', '2:4'), { left: 15, paused: true });
+  assert.deepEqual(R.restoredClock(null, 30, 'answer', '2:4'), { left: 30, paused: true });
+});
+
+test('saved matches reject damaged question stages and unsafe rule values', () => {
+  const base = match();
+  const active = R.open(base, 0, 0);
+  assert.equal(R.validate(active), true);
+  assert.equal(R.validate({ ...active, current: { ...active.current, stage: 'unknown' } }), false);
+  assert.equal(R.validate({ ...active, current: { ...active.current, ci: 99 } }), false);
+  assert.equal(R.validate({ ...active, rules: { ...active.rules, timer: Infinity } }), false);
+  assert.equal(R.validate({ ...base, current: active.current }), false);
+});
+
 test('content packs: every category fills a fair board and its media are valid', () => {
   const ctx = vm.createContext({});
   vm.runInContext('var CATEGORIES = [];', ctx);
