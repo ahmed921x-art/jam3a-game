@@ -28,6 +28,7 @@ const Match = (() => {
     steal: "full",
     penalty: "none",
     clip: 0,
+    repeat: 0, // 1 = يسمح بتكرار أسئلة سبق لعبها (عشوائي تماماً)
     first: "random",
     filter: "all",
     search: "",
@@ -105,6 +106,7 @@ const Match = (() => {
       if (["off", "full", "half"].includes(p.steal)) cfg.steal = p.steal;
       if (["none", "half", "full"].includes(p.penalty)) cfg.penalty = p.penalty;
       if ([0, 5, 8, 12, 20, -1].includes(p.clip)) cfg.clip = p.clip;
+      if ([0, 1].includes(p.repeat)) cfg.repeat = p.repeat;
       if (["random", "0", "1"].includes(p.first)) cfg.first = p.first;
     } catch {}
   }
@@ -205,6 +207,7 @@ const Match = (() => {
           ${cfg.steal !== "off" ? ruleRow(L("⏳ وقت السرقة", "⏳ Steal time"), L("ثوانٍ للفريق الذي يحاول السرقة.", "Seconds for the stealing side."), seg("stealTimer", cfg.stealTimer, [[10, "10"], [15, "15"], [20, "20"]], "steal time")) : ""}
           ${ruleRow(L("🎧 طول مقطع الأغنية", "🎧 Song snippet length"), L("«تلقائي» = 12 ثانية للسهل، 8 للمتوسط، 5 للصعب، ومن مكان عشوائي آمن في كل مرة. المقدّم يقدر يزيد 5 ثوانٍ.", "Auto = 12s easy, 8s medium, 5s hard, from a random safe spot each time. The host can add 5s."), seg("clip", cfg.clip, [[0, L("تلقائي", "Auto")], [5, "5"], [8, "8"], [12, "12"], [20, "20"], [-1, L("كامل", "Full")]], "clip"))}
           ${ruleRow(L("➖ خصم الإجابة الخاطئة", "➖ Wrong-answer penalty"), L("يُخصم من الفريق صاحب الدور إذا أخطأ.", "Deducted from the answering side on a wrong answer."), seg("penalty", cfg.penalty, [["none", L("بلا خصم", "None")], ["half", L("نصف", "Half")], ["full", L("كامل", "Full")]], "penalty"))}
+          ${ruleRow(L("🔁 تكرار الأسئلة", "🔁 Repeat questions"), L("إيقاف = تظهر الأسئلة اللي ما انلعبت أولاً. تشغيل = اختيار عشوائي ولو تكررت أسئلة جرّبتوها.", "Off = unplayed questions come first. On = fully random, played questions may repeat."), seg("repeat", cfg.repeat, [[0, L("إيقاف", "Off")], [1, L("تشغيل", "On")]], "repeat"))}
           ${ruleRow(L("🎲 من يبدأ؟", "🎲 Who starts?"), "", seg("first", cfg.first, [["random", L("قرعة", "Random")], ["0", esc(sideName(0))], ["1", esc(sideName(1))]], "first"))}
         </div>
       </section>
@@ -367,7 +370,7 @@ const Match = (() => {
     if (segEl) {
       const k = segEl.dataset.key;
       const v = b.dataset.v;
-      cfg[k] = ["count", "values", "timer", "stealTimer", "clip"].includes(k) ? +v : v;
+      cfg[k] = ["count", "values", "timer", "stealTimer", "clip", "repeat"].includes(k) ? +v : v;
       if (k === "count" && cfg.selected.length > cfg.count) cfg.selected = cfg.selected.slice(0, cfg.count);
       savePrefs();
       Sound.click();
@@ -414,7 +417,7 @@ const Match = (() => {
     });
     let board;
     try {
-      board = R.buildBoard(chosen, { values: cfg.values, random: true, history: Game.questionHistory() });
+      board = R.buildBoard(chosen, { values: cfg.values, random: true, history: cfg.repeat ? [] : Game.questionHistory() });
     } catch {
       return toast(L("بعض الفئات لا تحتوي أسئلة فريدة كافية؛ غيّر الاختيار", "Some categories lack enough unique questions"));
     }
