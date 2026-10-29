@@ -117,7 +117,7 @@ const CATEGORY_IMAGES = {
 
 /* ---------- تصنيف الفئات للمنتقي (بحث/تصفية في bio-ui.js) ---------- */
 (() => {
-  const BIO = ["cell", "genetics", "microbes", "biotech", "ecology", "science", "body", "animals", "nature", "health", "space", "inventions"];
+  const BIO = ["cell", "genetics", "microbes", "biotech", "biochem", "ecology", "science", "body", "animals", "nature", "health", "space", "inventions"];
   const KUWAIT = ["kuwait", "kw-history", "kw-food", "kw-proverbs", "kw-dialect", "kw-places", "gulf-artists"];
   CATEGORIES.forEach((c) => {
     if (CATEGORY_IMAGES[c.id]) c.img = "assets/categories/" + CATEGORY_IMAGES[c.id];

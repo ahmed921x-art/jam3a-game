@@ -12,7 +12,7 @@ const Match = (() => {
 
   const COLORS = ["#9fe0ec", "#e8949d", "#c3e813", "#e4a6f7", "#f9e09b", "#ffb36b"];
   const LS_PREFS = "bio_match_prefs";
-  const COUNTS = [3, 4, 5, 6]; // عدد الفئات في اللوحة
+  const COUNTS = [1, 2, 3, 4, 5, 6]; // عدد الفئات في اللوحة (1 = بوث يركّز على فئة واحدة)
 
   const cfg = {
     mode: "teams",
@@ -275,7 +275,7 @@ const Match = (() => {
     const n = validSelection().length;
     $("#msCount").textContent = `${n} / ${cfg.count}`;
     const st = $("#msStatus");
-    st.textContent = n < cfg.count ? L(`اختر ${cfg.count - n} فئات أخرى`, `Pick ${cfg.count - n} more`) : L(`جاهزين! ${n} فئات × 6 أسئلة`, `Ready! ${n} categories × 6 questions`);
+    st.textContent = n < cfg.count ? L(cfg.count - n === 1 ? "اختر فئة واحدة أخرى" : `اختر ${cfg.count - n} فئات أخرى`, `Pick ${cfg.count - n} more`) : L(n === 1 ? "جاهزين! فئة واحدة × 6 أسئلة" : `جاهزين! ${n} فئات × 6 أسئلة`, `Ready! ${n} categories × 6 questions`);
     $(".ms-start").classList.toggle("ready", n === cfg.count);
   }
 
@@ -353,7 +353,7 @@ const Match = (() => {
       const pos = cfg.selected.indexOf(id);
       if (pos > -1) cfg.selected.splice(pos, 1);
       else {
-        if (validSelection().length >= cfg.count) return toast(L(`اخترت ${cfg.count} فئات — ألغِ وحدة أو غيّر العدد`, `You already picked ${cfg.count} — remove one or change the count`));
+        if (validSelection().length >= cfg.count) return toast(L(cfg.count === 1 ? "اخترت فئة — ألغِها أو غيّر العدد" : `اخترت ${cfg.count} فئات — ألغِ وحدة أو غيّر العدد`, `You already picked ${cfg.count} — remove one or change the count`));
         cfg.selected.push(id);
         Sound.select();
       }
@@ -406,7 +406,7 @@ const Match = (() => {
   function start() {
     Sound.unlock();
     const chosen = validSelection();
-    if (chosen.length !== cfg.count) return toast(L(`اختر ${cfg.count} فئات بالضبط`, `Pick exactly ${cfg.count} categories`));
+    if (chosen.length !== cfg.count) return toast(L(cfg.count === 1 ? "اختر فئة واحدة" : `اختر ${cfg.count} فئات بالضبط`, `Pick exactly ${cfg.count} categories`));
     // اللاعبون المكتوبون بدون Enter يُضافون تلقائياً
     $$("[data-player]").forEach((inp) => {
       const v = inp.value.trim();

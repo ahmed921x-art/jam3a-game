@@ -231,6 +231,9 @@
   grid-template-columns: repeat(var(--cols), minmax(140px, 1fr));
   gap: 8px;
   min-width: min-content;
+  /* لوحة بفئة أو فئتين: لا تتمدد الأعمدة على كامل الشاشة */
+  max-width: calc(var(--cols) * 300px);
+  margin-inline: auto;
 }
 .mb-col { display: grid; grid-auto-rows: auto; gap: 8px; align-content: start; }
 /* صف لكل قيمة فيه خانتان: فرصة لكل فريق */
