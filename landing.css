@@ -361,6 +361,21 @@ body[data-mode="light"] .hstat .hs-num { color: var(--text); }
     width: 100%;
   }
 }
+/* اسم صانع الموقع ومن ساعده — صفحة البداية فقط */
+.credits {
+  margin: 10px auto 4px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--text-2);
+}
+.credits b {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+.credits .cr-dot {
+  margin: 0 6px;
+  color: var(--text-3);
+}
 .footer {
   text-align: center;
   color: var(--text-3);

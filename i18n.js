@@ -52,6 +52,8 @@ const I18N = (() => {
       cta_h: "جاهزين للتحدي؟",
       cta_p: "تكفي شاشة واحدة ومقدّم يقرأ الأسئلة. يمكن تثبيت اللعبة كتطبيق على الجوال.",
       footer: "لعبة مسابقات علمية للأصدقاء والفصول والنوادي",
+      credit_made: "صنع الموقع",
+      credit_help: "بمساعدة",
 
       // الإعداد
       setup_h: "لعبة جديدة",
@@ -333,6 +335,8 @@ const I18N = (() => {
       cta_h: "Ready for the challenge?",
       cta_p: "All you need is one screen and a host to read. You can install it as an app on your phone.",
       footer: "A science quiz game for friends, classes and clubs",
+      credit_made: "Made by",
+      credit_help: "with help from",
 
       setup_h: "New game",
       setup_sub: "Three quick steps and you're playing.",
