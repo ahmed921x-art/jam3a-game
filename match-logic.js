@@ -9,7 +9,7 @@ const MatchRules = (() => {
   const PER_TIER = 2;
   // قيم اللوحة الظاهرة (يختارها المقدّم)؛ المفتاح = قيمة السؤال السهل
   const VALUES = { 100: [100, 200, 300], 200: [200, 400, 600], 300: [300, 600, 900], 500: [500, 1000, 1500] };
-  const TYPES = ["text", "image", "audio", "video"];
+  const TYPES = ["text", "image", "audio", "video", "map"];
 
   const text = (v) => (typeof v === "string" ? v.trim() : "");
   const key = (v) => text(v).normalize("NFKC").replace(/\s+/g, " ").toLowerCase();
@@ -42,13 +42,27 @@ const MatchRules = (() => {
     if (q.mute === true) out.mute = true; // فيديو بدون صوت (خمّن من المشهد)
     if (text(q.hint)) out.hint = text(q.hint);
     if (/^[\w-]{11}$/.test(text(q.yt))) out.yt = text(q.yt); // معرّف فيديو YouTube (يُشغَّل مضمَّناً)
+    // map: مكان على الخريطة — صورة جوية بلا أسماء + أسماء ما حوله فقط (labels: [[lat, lng, "الاسم", "road"|"poi"]])
+    if (out.type === "map") {
+      const inKw = (la, ln) => Number.isFinite(la) && Number.isFinite(ln) && la > 28 && la < 31 && ln > 46 && ln < 49.5;
+      if (!inKw(q.lat, q.lng)) out.type = "text";
+      else {
+        out.lat = q.lat;
+        out.lng = q.lng;
+        out.z = Number.isFinite(q.z) ? Math.max(10, Math.min(18, Math.round(q.z))) : 16;
+        out.labels = (Array.isArray(q.labels) ? q.labels : [])
+          .filter((l) => Array.isArray(l) && inKw(l[0], l[1]) && text(l[2]))
+          .slice(0, 12)
+          .map((l) => [l[0], l[1], text(l[2]), l[3] === "road" ? "road" : "poi"]);
+      }
+    }
     if (out.type === "image" && !out.img) out.type = "text";
     if (out.type === "audio" && !out.audio && !out.yt) out.type = "text";
     if (out.type === "video" && !out.video && !out.yt) out.type = "text";
     if (!out.a || (!out.q && out.type === "text")) return null;
     return out;
   }
-  const qKey = (q) => key(q.q) + "|" + (q.img || q.audio || q.video || q.yt || "");
+  const qKey = (q) => key(q.q) + "|" + (q.img || q.audio || q.video || q.yt || (q.lat != null ? q.lat + "," + q.lng : ""));
 
   // هل تكفي أسئلة الفئة لعمود كامل؟ (سؤالان مختلفان لكل مستوى)
   function canFill(cat) {
@@ -85,7 +99,7 @@ const MatchRules = (() => {
         if (!q) continue;
         const k = qKey(q);
         // أسئلة التعرف على الصوت/الصورة لا تكرر نفس الهوية؛ أسئلة الفيديو قد تشترك في نتيجة مختلفة السياق.
-        const a = q.type === "image" || q.type === "audio" ? key(q.a) : "";
+        const a = q.type === "image" || q.type === "audio" || q.type === "map" ? key(q.a) : "";
         if (used.has(k) || taken.has(k) || (a && ans.has(a))) continue;
         taken.add(k);
         ans.add(a);

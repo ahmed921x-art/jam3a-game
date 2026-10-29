@@ -52,6 +52,13 @@ Build a contact sheet in the browser pane (inject `<img>`s into a fixed overlay 
 ### 3. Edit `gaming-pack.js`
 Use the helpers. Keep tiers balanced. Don't duplicate an answer inside a category. A new category is an object `{ id: "g-xxx" | "a-xxx" | "c-xxx", name, icon, questions }` in the right array.
 
+### 3b. «قوقل ماب الكويت» places (map-pack.js)
+The question is a no-label Esri satellite view plus names of the things *around* the place; Google Maps only appears on reveal. Never put the Google embed in the question: it always prints the target's name.
+1. Coordinates: `node tools/content/geocode.js "Place name Kuwait"`, then eyeball them (the point must sit on the building).
+2. Labels: `node tools/content/map-labels.js --lat … --lng … --z 17 --ban "every,word,of,the,name,ar+en"`. It drops banned words in any tag, everything inside/touching the target's polygon (mall tenants, attached hotels), and indoor POIs. Needs ≥3 labels. If it returns too few, lower `--z` by 1; if the frame is entirely inside the place (airports), skip the place.
+3. Add `map(points, lat, lng, z, "answer", "ban words", labels)` to map-pack.js. `tests/map-pack.test.js` fails if any label contains a ban word.
+4. Look at it in a match: no name of the place may be visible anywhere on the satellite view.
+
 ### 4. Verify
 - `node tools/content/check-pack.js`: two per tier, duplicate answers, every YouTube ID embeddable, every image loads. ⚠ lines mean throttling; rerun later.
 - `node --test tests/*.test.js`

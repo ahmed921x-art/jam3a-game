@@ -38,6 +38,15 @@ test('an admin-edited built-in category replaces the original in place', () => {
   assert.ok(R.canFill(edited));
 });
 
+test('an admin category duplicating a built-in name is hidden', () => {
+  const before = loadCatalog({ cats: [], hidden: [], images: {} });
+  const qs = [200, 200, 400, 400, 600, 600].map((points, i) => ({ points, q: 'سؤال ' + i + '؟', a: 'ج' + i }));
+  const after = loadCatalog({ cats: [{ id: 'a_dup', name: 'الكيمياء الحيوية', icon: '⚗️', group: 'bio', questions: qs }], hidden: [], images: {} });
+  assert.equal(after.length, before.length);
+  assert.equal(after.filter((c) => c.name === 'الكيمياء الحيوية').length, 1);
+  assert.equal(after.find((c) => c.name === 'الكيمياء الحيوية').id, 'biochem');
+});
+
 test('media fields survive an admin edit of a clip category', () => {
   const base = loadCatalog({ cats: [], hidden: [], images: {} }).find((c) => c.id === 'g-music');
   const questions = base.questions.map((q) => ({ ...q, a: q.a + ' ✓' }));

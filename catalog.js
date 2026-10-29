@@ -38,9 +38,10 @@ const Catalog = (() => {
         if (img) x.img = img;
         if (aImg) x.aImg = aImg;
         // حقول الوسائط من فئة أساسية معدّلة؛ match-logic.cleanQuestion يعيد فحصها قبل اللعب
-        if (["text", "image", "audio", "video"].includes(q.type)) x.type = q.type;
+        if (["text", "image", "audio", "video", "map"].includes(q.type)) x.type = q.type;
         if (typeof q.yt === "string" && /^[\w-]{11}$/.test(q.yt)) x.yt = q.yt;
-        ["start", "end", "blur", "zoom"].forEach((k) => Number.isFinite(q[k]) && (x[k] = q[k]));
+        ["start", "end", "blur", "zoom", "lat", "lng", "z"].forEach((k) => Number.isFinite(q[k]) && (x[k] = q[k]));
+        if (Array.isArray(q.labels)) x.labels = q.labels.slice(0, 12);
         if (Array.isArray(q.win)) x.win = q.win.filter((w) => Array.isArray(w) && w.length === 2 && w.every(Number.isFinite)).slice(0, 20);
         if (q.mute === true) x.mute = true;
         if (txt(q.focus, 12)) x.focus = txt(q.focus, 12);
@@ -49,7 +50,7 @@ const Catalog = (() => {
         return x;
       });
     // سؤالان مختلفان لكل قيمة (النص + الوسيط: أسئلة الوسائط قد تتشارك النص)
-    const key = (q) => q.q + "|" + (q.img || q.yt || q.audio || q.video || "");
+    const key = (q) => q.q + "|" + (q.img || q.yt || q.audio || q.video || (q.lat != null ? q.lat + "," + q.lng : ""));
     const ok = TIERS.every((p) => new Set(questions.filter((q) => q.points === p).map(key)).size >= 2);
     if (!ok) return null;
     const cat = { id: String(id), name, icon: txt(d.icon, 16) || "📁", group: GROUPS.includes(d.group) ? d.group : "general", questions, admin: true };
@@ -74,7 +75,9 @@ const Catalog = (() => {
       if (img) out.img = img;
       return out;
     });
-    const extra = docs.filter((c) => !BASE_IDS.has(c.id) && !hidden.has(c.id));
+    // فئة إضافية بنفس اسم فئة أساسية = نسخة مكررة (مثل «الكيمياء الحيوية» بـ12 سؤالاً) فلا تُعرض
+    const baseNames = new Set(base.map((c) => c.name.trim()));
+    const extra = docs.filter((c) => !BASE_IDS.has(c.id) && !hidden.has(c.id) && !baseNames.has(c.name.trim()));
     // كل فئة إضافية تظهر في آخر مجموعتها
     const rank = { bio: 0, kuwait: 1, general: 2 };
     const all = [...base, ...extra].map((c, i) => [c, i]);

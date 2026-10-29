@@ -3,7 +3,7 @@ const BioRules = (() => {
   const TIERS = [200, 400, 600];
   const text = (value) => typeof value === "string" ? value.trim() : "";
   const key = (value) => text(value).normalize("NFKC").replace(/\s+/g, " ").toLowerCase();
-  const historyKey = (q) => key(q?.q) + "|" + (q?.img || q?.audio || q?.video || q?.yt || "");
+  const historyKey = (q) => key(q?.q) + "|" + (q?.img || q?.audio || q?.video || q?.yt || (q?.lat != null ? q.lat + "," + q.lng : ""));
   const historyRank = (history) => new Map((Array.isArray(history) ? history : []).map((id, i) => [id, i]));
   const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
   const safeImage = (value) => {

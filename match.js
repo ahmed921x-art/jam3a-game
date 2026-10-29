@@ -124,9 +124,9 @@ const Match = (() => {
   }
   function typesOf(cat) {
     const set = new Set(cat.questions.map((q) => q.type || "text"));
-    return ["image", "audio", "video"].filter((t) => set.has(t));
+    return ["image", "audio", "video", "map"].filter((t) => set.has(t));
   }
-  const TYPE_ICON = { image: "🖼️", audio: "🎵", video: "🎬" };
+  const TYPE_ICON = { image: "🖼️", audio: "🎵", video: "🎬", map: "🗺️" };
   const groupOf = (c) => (c.custom ? "custom" : c.group || "general");
   // ترتيب المجموعات في صفحة الإعداد: [المعرّف، الرمز، الاسم، الاسم بالإنجليزي]
   const GROUPS = [
@@ -458,7 +458,9 @@ const Match = (() => {
     m.board.forEach((col) =>
       col.cells.forEach((cell) => {
         if (cell.status !== "open") return;
-        [cell.q.img, cell.q.aImg].forEach((src) => {
+        const q = cell.q;
+        const tiles = q.type === "map" ? [...mapLayerHTML(q, q.z).matchAll(/src="([^"]+)"/g)].map((x) => x[1]) : [];
+        [q.img, q.aImg, ...tiles].forEach((src) => {
           if (!src || prefetched.has(src)) return;
           const im = new Image();
           im.decoding = "async";
@@ -627,7 +629,57 @@ const Match = (() => {
       </div>`;
   }
 
+  /* ---------------- سؤال الخريطة ----------------
+     قبل الكشف: صورة جوية بلا أي أسماء (Esri World Imagery) + أسماء ما حول المكان فقط
+     (q.labels من OpenStreetMap، أسماء المكان نفسه مستبعدة — tools/content/map-labels.js).
+     بعد الكشف: خريطة Google بالقمر الصناعي على نفس الموقع. */
+  const TILE = (z, x, y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+  let mapZ = 0;
+  function worldPx(lat, lng, z) {
+    const n = 256 * 2 ** z, r = (lat * Math.PI) / 180;
+    return [((lng + 180) / 360) * n, ((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n];
+  }
+  function mapLayerHTML(q, z) {
+    const [cx, cy] = worldPx(q.lat, q.lng, z);
+    const W = 720, H = 440; // نصف المساحة المغطّاة بالبلاط حول المركز
+    let tiles = "";
+    for (let tx = Math.floor((cx - W) / 256); tx <= Math.floor((cx + W) / 256); tx++)
+      for (let ty = Math.floor((cy - H) / 256); ty <= Math.floor((cy + H) / 256); ty++)
+        tiles += `<img class="mq-tile" alt="" draggable="false" decoding="async" src="${TILE(z, tx, ty)}" style="left:${Math.round(tx * 256 - cx)}px;top:${Math.round(ty * 256 - cy)}px" />`;
+    const labels = (q.labels || [])
+      .map(([la, ln, name, kind]) => {
+        const [x, y] = worldPx(la, ln, z);
+        return `<span class="mq-lbl ${kind}" style="left:${Math.round(x - cx)}px;top:${Math.round(y - cy)}px">${esc(name)}</span>`;
+      })
+      .join("");
+    return `${tiles}${labels}`;
+  }
+  function renderMap() {
+    const q = curCell().q, layer = $("#mqMapLayer");
+    if (!layer || q.type !== "map") return;
+    layer.innerHTML = mapLayerHTML(q, mapZ);
+    $$("[data-act='mapzoom']").forEach((b) => (b.disabled = +b.dataset.d > 0 ? mapZ >= q.z + 1 : mapZ <= q.z - 4));
+  }
+  function showGoogleMap() {
+    const q = curCell().q, box = $("#mqMap");
+    if (!box || box.classList.contains("is-google")) return;
+    box.classList.add("is-google");
+    box.innerHTML = `<iframe class="mq-gmap" title="${esc(L("خريطة Google", "Google Maps"))}" referrerpolicy="no-referrer-when-downgrade"
+      src="https://maps.google.com/maps?q=${q.lat},${q.lng}&t=k&z=${Math.min(18, q.z)}&hl=${document.documentElement.lang === "en" ? "en" : "ar"}&output=embed"></iframe>`;
+  }
+
   function mediaHTML(q) {
+    if (q.type === "map") {
+      return `<div class="mq-map" id="mqMap">
+          <div class="mq-map-layer" id="mqMapLayer"></div>
+          <span class="mq-pin" aria-hidden="true"></span>
+          <div class="mq-map-zoom">
+            <button type="button" class="tp-btn" data-act="mapzoom" data-d="1" aria-label="${esc(L("قرّب", "Zoom in"))}">＋</button>
+            <button type="button" class="tp-btn" data-act="mapzoom" data-d="-1" aria-label="${esc(L("بعّد", "Zoom out"))}">－</button>
+          </div>
+          <span class="mq-map-attr">Esri, Maxar · © OpenStreetMap</span>
+        </div>`;
+    }
     if (q.type === "image") {
       return `<div class="mq-imgwrap"><img id="mqImg" src="${esc(q.img)}" alt="${esc(L("صورة السؤال", "Question image"))}" /></div>
         <button type="button" class="btn btn-ghost btn-sm mq-unblur" data-act="unblur"><svg class="ic"><use href="#i-search" /></svg><span>${esc(L("خفّف التشويش", "Reduce blur"))}</span></button>`;
@@ -682,6 +734,8 @@ const Match = (() => {
       <footer class="mq-controls" id="mqControls"></footer>
       <div class="mq-mini">${[0, 1].map((i) => `<span class="mqm" style="--c:${m.sides[i].color}"><b>${esc(m.sides[i].name)}</b><span data-mscore="${i}">${m.sides[i].score}</span></span>`).join("")}</div>`;
     FX.pauseBackground(true);
+    mapZ = q.z || 16;
+    renderMap();
     bindMedia(q);
     applyBlur();
     $("#mqModal").classList.add("active");
@@ -719,7 +773,10 @@ const Match = (() => {
 
     $("#mqAnswer").hidden = !c.revealed;
     applyBlur();
-    if (c.revealed) $("#mqStage").classList.add("revealed");
+    if (c.revealed) {
+      $("#mqStage").classList.add("revealed");
+      if (cell.q.type === "map") showGoogleMap();
+    }
 
     const res = $("#mqResult");
     if (c.stage === "resolved" && c.result) {
@@ -780,6 +837,11 @@ const Match = (() => {
     if (a === "unblur") {
       blur = Math.max(0, Math.round(blur * 0.55) - 2);
       applyBlur();
+      return Sound.click();
+    }
+    if (a === "mapzoom") {
+      mapZ += +b.dataset.d;
+      renderMap();
       return Sound.click();
     }
     if (a === "play") return togglePlay();
