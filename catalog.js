@@ -10,7 +10,7 @@
 const Catalog = (() => {
   const LS = "bio_catalog_v1";
   const TIERS = [200, 400, 600];
-  const GROUPS = ["bio", "kuwait", "general"];
+  const GROUPS = ["bio", "kuwait", "ku", "general"];
   const BASE = CATEGORIES.slice(); // الفئات الأساسية بعد questions-bio.js
   const BASE_IDS = new Set(BASE.map((c) => c.id));
   let lastSig = "";

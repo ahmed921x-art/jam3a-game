@@ -14,6 +14,8 @@ process.argv.slice(2).forEach((v, i, all) => {
 });
 const lat = +args.lat, lng = +args.lng, z = +(args.z || 17);
 const bans = String(args.ban || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+// --hide: كلمات تُخفى من الأسماء بدون اعتبارها منطقة هدف (مثل «كلية» داخل حرم جامعي كامل)
+const hides = String(args.hide || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
   console.error('usage: node tools/content/map-labels.js --lat 29.3 --lng 47.9 --z 17 --ban "word1,word2"');
   process.exit(1);
@@ -77,6 +79,7 @@ const nearRing = (p, r, buf) => inside(p, r) || r.some((a, i) => i && segDist(p,
 
 const allText = (tags) => Object.entries(tags).filter(([k]) => !/^(highway|building|source|wikidata|wikipedia|opening_hours|phone|website|layer)/.test(k)).map(([, v]) => v).join(" ").toLowerCase();
 const banned = (tags) => bans.some((b) => allText(tags).includes(b));
+const hidden = (tags) => hides.some((b) => allText(tags).includes(b));
 
 (async () => {
   let j;
@@ -96,7 +99,7 @@ const banned = (tags) => bans.some((b) => allText(tags).includes(b));
     if (tags.boundary || tags.admin_level || tags.place) continue; // المحافظات والمناطق السكنية لا تُعدّ هدفاً
     for (const r of rings(e)) {
       const a = area(r);
-      if (banned(tags) || (inside([0, 0], r) && a < 4e6)) zones.push(r);
+      if (banned(tags) || (inside([0, 0], r) && a < 4e6 && !hidden(tags))) zones.push(r);
     }
   }
   const inZone = (p) => zones.some((r) => nearRing(loc(p), r, BUF));
@@ -106,7 +109,7 @@ const banned = (tags) => bans.some((b) => allText(tags).includes(b));
     const tags = e.tags || {};
     const name = tags["name:ar"] || tags.name;
     if (!name || tags.boundary || tags.admin_level || tags.place) continue;
-    if (banned(tags) || tags.indoor || tags.level != null || tags["level:ref"]) continue;
+    if (banned(tags) || hidden(tags) || tags.indoor || tags.level != null || tags["level:ref"]) continue;
     const road = !!tags.highway;
     let pts = e.type === "node" ? [[e.lat, e.lon]] : (e.geometry || (e.members || []).flatMap((m) => m.geometry || [])).map((g) => [g.lat, g.lon]);
     if (!pts.length) continue;

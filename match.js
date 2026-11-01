@@ -137,6 +137,7 @@ const Match = (() => {
     ["cartoon", "📺", "كرتون زمان", "Classic cartoons"],
     ["bio", "🧬", "أحياء وعلوم", "Science"],
     ["kuwait", "🇰🇼", "الكويت", "Kuwait"],
+    ["ku", "🎓", "جامعة الكويت", "Kuwait University"],
     ["general", "🎯", "معلومات عامة", "General"],
     ["custom", "✏️", "فئاتي", "Mine"],
   ];

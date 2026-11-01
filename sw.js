@@ -1,10 +1,10 @@
 /* بايو: cache only this GitHub Pages scope; refresh assets online. */
-const CACHE = "bio-v25";
+const CACHE = "bio-v26";
 const ASSETS = [
   "./", "./index.html", "./style.css", "./landing.css",
   "./admin.html", "./admin.css", "./admin.js",
   "./questions.js", "./questions-extra.js", "./questions-kuwait.js", "./questions-pack2.js", "./questions-biochem.js",
-  "./questions-bio.js", "./gaming-pack.js", "./video-pack.js", "./expansion-pack.js", "./map-pack.js", "./match-logic.js", "./match.js", "./match.css",
+  "./questions-bio.js", "./gaming-pack.js", "./video-pack.js", "./expansion-pack.js", "./map-pack.js", "./ku-pack.js", "./ku-map-pack.js", "./match-logic.js", "./match.js", "./match.css",
   "./i18n.js", "./firebase-config.js", "./auth.js", "./sounds.js", "./effects.js",
   "./catalog.js", "./game-logic.js", "./game.js", "./bio-ui.js", "./manifest.json", "./icon.svg", "./og-image.svg",
   "./assets/logo-full.png", "./assets/logo-mark.png", "./assets/logo.png", "./assets/og-image.png", "./assets/favicon-48.png",
